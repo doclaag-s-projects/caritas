@@ -149,9 +149,6 @@ public function listPublicFiles(Request $request)
         return [
             'name' => $file->nombre_archivo,
             'url' => $file->ubicacion_archivo,
-            'estado' => $file->estado,
-            'publico' => $file->publico,
-            'usuarios_id' => $file->usuarios_id,
         ];
     });
     if ($request->wantsJson()) {
@@ -161,4 +158,33 @@ public function listPublicFiles(Request $request)
         'files' => $files,
     ]);
 }
+public function listCategoriesWithFiles()
+{
+    $categoriasPrincipales = CategoryModel::where('categoria_principal', 1)
+        ->with(['subcategorias' => function ($query) {
+            $query->with(['files' => function ($query) {
+                $query->where('publico', 1);
+            }]);
+        }, 'files' => function ($query) {
+            $query->where('publico', 1);
+        }])
+        ->get();
+
+    $subcategorias = CategoryModel::where('categoria_principal', 0)
+        ->with(['files' => function ($query) {
+            $query->where('publico', 1);
+        }])
+        ->get();
+
+    // Filtrar subcategorías que no tienen archivos públicos
+    $subcategorias = $subcategorias->filter(function ($subcategoria) {
+        return $subcategoria->files->isNotEmpty();
+    });
+
+    return response()->json([
+        'principales' => $categoriasPrincipales,
+        'subcategorias' => $subcategorias
+    ]);
+}
+
 }
