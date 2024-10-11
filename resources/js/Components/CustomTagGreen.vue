@@ -22,8 +22,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update-selected-items']);
 
-const selectItem = (itemId) => {
-    emit('update-selected-items', [itemId]);
+const toggleItem = (itemId) => {
+    const newSelectedItems = [itemId]; // Solo permite una selección
+    emit('update-selected-items', newSelectedItems);
 };
 
 // Watch for changes in the reset prop to clear selected items
@@ -32,6 +33,13 @@ watch(() => props.reset, (newVal) => {
         emit('update-selected-items', []);
     }
 });
+
+// Capitalize filter
+const capitalize = (value) => {
+    if (!value) return '';
+    value = value.toString();
+    return value.charAt(0).toUpperCase() + value.slice(1);
+};
 </script>
 
 <template>
@@ -40,9 +48,9 @@ watch(() => props.reset, (newVal) => {
             <label class="text-sm font-medium">{{ label }}</label>
             <div class="flex flex-wrap gap-2">
                 <div v-for="item in items" :key="item.id" class="px-3 py-1 rounded-full text-sm cursor-pointer bg-green-500 text-white"
-                    :class="{ 'ring-2 ring-green-700': selectedItems.includes(item.id) }"
-                    @click="selectItem(item.id)">
-                    {{ item.nombre_etiqueta }}
+                    :class="selectedItems.includes(item.id) ? 'ring-2 ring-offset-2 ring-green-700' : ''"
+                    @click="toggleItem(item.id)">
+                    {{ capitalize(item.nombre_etiqueta) }}
                 </div>
             </div>
         </div>

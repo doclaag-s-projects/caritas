@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import DialogModal from '@/Components/DialogModal.vue';
@@ -22,7 +22,7 @@ const descripcionEtiqueta = ref('');
 const etiquetaFormError = ref(null);
 const selectedEtiqueta = ref(null);
 
-const activeTab = ref('rutas');
+const activeTab = ref('etiquetas'); // Establecer 'etiquetas' como la pestaña activa por defecto
 const selectedRuta = ref(null);
 
 const extraField = ref(''); // Campo extra que has solicitado
@@ -45,6 +45,8 @@ const showNotification = (message, type = 'success') => {
   }, 3000);
 };
 
+const isEditing = ref(false);
+
 onMounted(async () => {
     try {
         await loadCategories();
@@ -56,11 +58,44 @@ onMounted(async () => {
     }
 });
 
+const capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
+const sanitizeInput = (input) => {
+    return input.replace(/^[\s]+|[^a-zA-Z0-9\s]/g, '');
+};
+
+const sanitizeDescription = (input) => {
+    return input.replace(/^[^a-zA-Z0-9]+/, '');
+};
+
+watch(nombreEtiqueta, (newValue) => {
+    nombreEtiqueta.value = capitalizeFirstLetter(sanitizeInput(newValue));
+});
+
+watch(descripcionEtiqueta, (newValue) => {
+    descripcionEtiqueta.value = sanitizeDescription(newValue);
+});
+
 const submitForm = async () => {
+    // Validar campos del formulario
+    if (!nombreEtiqueta.value) {
+        showNotification('El campo "Nombre de la Etiqueta" es obligatorio.', 'error');
+        return;
+    }
+    if (!descripcionEtiqueta.value) {
+        showNotification('El campo "Descripción" es obligatorio.', 'error');
+        return;
+    }
+
     try {
-        if (selectedEtiqueta.value) {
+        if (selectedEtiqueta.value && isEditing.value) {
             // Actualizar etiqueta existente
             await updateEtiquetaForm();
+        } else if (selectedEtiqueta.value && !isEditing.value) {
+            // Desbloquear campos para edición
+            isEditing.value = true;
         } else {
             // Crear nueva etiqueta
             const response = await axios.post('/tags', {
@@ -79,6 +114,7 @@ const submitForm = async () => {
         }
     } catch (err) {
         etiquetaFormError.value = err.response?.data?.message || 'Error desconocido al enviar el formulario';
+        showNotification(etiquetaFormError.value, 'error');
     }
 };
 
@@ -89,16 +125,20 @@ const updateEtiquetaForm = async () => {
             nombre_etiqueta: nombreEtiqueta.value,
             descripcion_etiqueta: descripcionEtiqueta.value,
         }, { withCredentials: true });
-        nombreEtiqueta.value = '';
-        descripcionEtiqueta.value = '';
-        selectedEtiqueta.value = null;
         etiquetaFormError.value = null;
+        isEditing.value = false;
         await loadTags();
         successMessage.value = 'Etiqueta actualizada con éxito';
         displayingToken.value = true;
         showNotification('Etiqueta actualizada con éxito');
+        
+        // Limpiar el formulario y restablecer el estado
+        nombreEtiqueta.value = '';
+        descripcionEtiqueta.value = '';
+        selectedEtiqueta.value = null;
     } catch (err) {
         etiquetaFormError.value = err.response?.data?.message || 'Error desconocido al actualizar la etiqueta';
+        showNotification(etiquetaFormError.value, 'error');
     }
 };
 
@@ -115,8 +155,10 @@ const deactivateEtiqueta = async (etiqueta) => {
         nombreEtiqueta.value = '';
         descripcionEtiqueta.value = '';
         selectedEtiqueta.value = null;
+        isEditing.value = false;
     } catch (err) {
         error.value = err.response?.data?.message || 'Error desconocido al desactivar la etiqueta';
+        showNotification(error.value, 'error');
     }
 };
 
@@ -127,15 +169,17 @@ const loadCategories = async () => {
         secundarias.value = response.data.secundarias;
     } catch (err) {
         error.value = err.response?.data?.message || 'Error desconocido al cargar las categorías';
+        showNotification(error.value, 'error');
     }
 };
 
 const loadTags = async () => {
     try {
         const response = await axios.get('/tags', { withCredentials: true });
-        secundarias.value = response.data;
+        secundarias.value = response.data.filter(tag => tag.estado === 1); // Filtrar etiquetas con estado 1
     } catch (err) {
         error.value = err.response?.data?.message || 'Error desconocido al cargar las etiquetas';
+        showNotification(error.value, 'error');
     }
 };
 
@@ -147,12 +191,19 @@ const selectEtiqueta = (etiqueta) => {
     selectedEtiqueta.value = etiqueta;
     nombreEtiqueta.value = etiqueta.nombre_etiqueta;
     descripcionEtiqueta.value = etiqueta.descripcion_etiqueta;
+    isEditing.value = false;
 };
 
 const clearEtiquetaForm = () => {
     nombreEtiqueta.value = '';
     descripcionEtiqueta.value = '';
+};
+
+const resetForm = () => {
+    nombreEtiqueta.value = '';
+    descripcionEtiqueta.value = '';
     selectedEtiqueta.value = null;
+    isEditing.value = false;
 };
 
 const etiquetas = computed(() => {
@@ -174,6 +225,7 @@ const updateSelectedTags = (newSelectedTags) => {
             nombreEtiqueta.value = selectedTag.nombre_etiqueta;
             descripcionEtiqueta.value = selectedTag.descripcion_etiqueta;
             selectedEtiqueta.value = selectedTag; // Asegúrate de actualizar selectedEtiqueta
+            isEditing.value = false;
         }
     } else {
         clearEtiquetaForm();
@@ -186,7 +238,6 @@ const updateSelectedTags = (newSelectedTags) => {
         <template #header>
             <nav class="flex space-x-4 mt-4">
                 <button @click="activeTab = 'busqueda'" :class="{'text-blue-500': activeTab === 'busqueda'}">Búsqueda</button>
-                <button @click="activeTab = 'rutas'" :class="{'text-blue-500': activeTab === 'rutas'}">Rutas</button>
                 <button @click="activeTab = 'etiquetas'" :class="{'text-blue-500': activeTab === 'etiquetas'}">Etiquetas</button>
             </nav>
         </template>
@@ -203,50 +254,6 @@ const updateSelectedTags = (newSelectedTags) => {
                     </div>
 
                     <div v-else>
-                        <!-- Tab Búsqueda -->
-                        <div v-if="activeTab === 'busqueda'">
-                            <Search />
-                        </div>
-
-                        <!-- Tab Rutas -->
-                        <div v-if="activeTab === 'rutas'">
-                            <h3 class="font-semibold text-lg text-gray-800 mb-4">Rutas</h3>
-                            
-                            <form @submit.prevent="submitForm" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
-                                <div class="mb-4">
-                                    <label for="nombre_categoria" class="block text-gray-700">Nombre de la Ruta</label>
-                                    <input type="text" id="nombre_categoria" v-model="nombreCategoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="descripcion_categoria" class="block text-gray-700">Descripción</label>
-                                    <textarea id="descripcion_categoria" v-model="descripcionCategoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
-                                </div>
-
-                                <div class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded max-h-64 overflow-y-auto">
-                                    <h3 class="font-semibold text-lg text-gray-800 mb-4">Rutas Creadas</h3>
-                                    <div v-if="principales.length === 0" class="text-center text-gray-500 mb-4">
-                                        No hay rutas disponibles.
-                                    </div>
-                                    <div v-else>
-                                        <div v-for="category in principales.slice(0, 5)" :key="category.id" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded cursor-pointer" @click="selectRuta(category)">
-                                            <h3 class="font-semibold text-lg text-gray-800">{{ category.nombre_categoria }}</h3>
-                                            <p class="text-gray-700">{{ category.descripcion_categoria }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-4">
-                                    <PrimaryButton type="submit">
-                                        {{ selectedRuta ? 'Actualizar Ruta' : 'Crear Ruta' }}
-                                    </PrimaryButton>
-                                </div>
-
-                                <div v-if="formError" class="text-red-500 text-center mb-4">
-                                    {{ formError }}
-                                </div>
-                            </form>
-                        </div>
-
                         <!-- Tab Etiquetas -->
                         <div v-if="activeTab === 'etiquetas'">
                             <h3 class="font-semibold text-lg text-gray-800 mb-4">Etiquetas</h3>
@@ -254,22 +261,41 @@ const updateSelectedTags = (newSelectedTags) => {
                             <form @submit.prevent="submitForm" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
                                 <div class="mb-4">
                                     <label for="nombre_etiqueta" class="block text-gray-700">Nombre de la Etiqueta</label>
-                                    <input type="text" id="nombre_etiqueta" v-model="nombreEtiqueta" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                                    <input type="text" id="nombre_etiqueta" v-model="nombreEtiqueta" :readonly="selectedEtiqueta && !isEditing" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                 </div>
                                 <div class="mb-4">
                                     <label for="descripcion_etiqueta" class="block text-gray-700">Descripción</label>
-                                    <textarea id="descripcion_etiqueta" v-model="descripcionEtiqueta" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+                                    <textarea id="descripcion_etiqueta" v-model="descripcionEtiqueta" :readonly="selectedEtiqueta && !isEditing" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                                    <div class="text-right text-gray-500 text-sm">{{ descripcionEtiqueta.length }}/255</div>
                                 </div>
-                                <div class="flex space-x-4">
+                                <div class="flex space-x-4 items-center">
                                     <PrimaryButton type="submit">
-                                        {{ selectedEtiqueta ? 'Actualizar Etiqueta' : 'Crear Etiqueta' }}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3H6a1 1 0 100 2h3v3a1 1 0 102 0v-3h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ selectedEtiqueta ? (isEditing ? 'Confirmar Actualización' : 'Actualizar Etiqueta') : 'Crear Etiqueta' }}
                                     </PrimaryButton>
-                                    <PrimaryButton type="button" @click="clearEtiquetaForm">
+                                    <PrimaryButton type="button" @click="clearEtiquetaForm" v-if="!selectedEtiqueta || isEditing">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M6 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                        </svg>
                                         Limpiar Etiqueta
                                     </PrimaryButton>
-                                    <PrimaryButton type="button" @click="deactivateEtiqueta(selectedEtiqueta)" v-if="selectedEtiqueta">
+                                    <PrimaryButton type="button" @click="deactivateEtiqueta(selectedEtiqueta)" v-if="selectedEtiqueta && !isEditing">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3H6a1 1 0 100 2h3v3a1 1 0 102 0v-3h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" />
+                                        </svg>
                                         Desactivar Etiqueta
                                     </PrimaryButton>
+                                    <button type="button" @click="resetForm" v-if="selectedEtiqueta" class="ml-2" title="Regresar al inicio">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div v-if="isEditing" class="mt-4 text-blue-500">
+                                    Estás editando una etiqueta.
                                 </div>
 
                                 <div class="mt-4">
