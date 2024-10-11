@@ -22,7 +22,7 @@ const descripcionEtiqueta = ref('');
 const etiquetaFormError = ref(null);
 const selectedEtiqueta = ref(null);
 
-const activeTab = ref('rutas');
+const activeTab = ref('busqueda'); // Define la propiedad activeTab
 const selectedRuta = ref(null);
 
 const extraField = ref(''); // Campo extra que has solicitado
@@ -185,8 +185,7 @@ const updateSelectedTags = (newSelectedTags) => {
     <AppLayout title="Categories">
         <template #header>
             <nav class="flex space-x-4 mt-4">
-                <button @click="activeTab = 'busqueda'" :class="{'text-blue-500': activeTab === 'busqueda'}">Búsqueda</button>
-                <button @click="activeTab = 'rutas'" :class="{'text-blue-500': activeTab === 'rutas'}">Rutas</button>
+                <button @click="activeTab = 'busqueda'" :class="{'text-blue-500': activeTab === 'busqueda'}">Principal</button>
                 <button @click="activeTab = 'etiquetas'" :class="{'text-blue-500': activeTab === 'etiquetas'}">Etiquetas</button>
             </nav>
         </template>
@@ -203,8 +202,8 @@ const updateSelectedTags = (newSelectedTags) => {
                     </div>
 
                     <div v-else>
-                        <!-- Tab Búsqueda -->
-                        <div v-if="activeTab === 'busqueda'">
+                         <!-- Tab Búsqueda -->
+                         <div v-if="activeTab === 'busqueda'">
                             <Search />
                         </div>
 
