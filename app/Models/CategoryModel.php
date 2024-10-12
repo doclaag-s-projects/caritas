@@ -24,8 +24,8 @@ class CategoryModel extends Model
      {
          return $this->hasMany(CategoryModel::class, 'categoria_padre');
      }
-     public function files()
-{
-    return $this->belongsToMany(File::class, 'archivos_categorias', 'categoria_id', 'archivo_id');
-}
+    public function files()
+    {
+        return $this->belongsToMany(File::class, 'archivos_categorias', 'categoria_id', 'archivo_id');
+    }
 }

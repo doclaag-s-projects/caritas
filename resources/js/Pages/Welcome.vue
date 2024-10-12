@@ -17,7 +17,6 @@ const props = defineProps({
 });
 
 const principales = ref([]);
-const subcategorias = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
@@ -28,7 +27,6 @@ const fetchCategoriesWithFiles = async () => {
     try {
         const response = await axios.get("/categories-with-files");
         principales.value = response.data.principales || [];
-        subcategorias.value = response.data.subcategorias || [];
     } catch (err) {
         error.value =
             err.response?.data?.message ||
@@ -106,99 +104,30 @@ const toggleSubcategory = (subcategory) => {
                                     </div>
                                     <div v-else>
                                         <ul>
-                                            <li
-                                                v-for="category in principales"
-                                                :key="category.id"
-                                                class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded"
-                                            >
-                                                <h3
-                                                    @click="
-                                                        toggleCategory(category)
-                                                    "
-                                                    class="font-semibold text-lg text-gray-800 cursor-pointer"
-                                                >
-                                                    {{
-                                                        category.nombre_categoria
-                                                    }}
+                                            <li v-for="category in principales" :key="category.id" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+                                                <h3 @click="toggleCategory(category)" class="font-semibold text-lg text-gray-800 cursor-pointer">
+                                                    {{ category.nombre_categoria }}
                                                 </h3>
                                                 <div v-if="category.expanded">
                                                     <!-- Mostrar archivos de la categoría principal -->
                                                     <ul>
-                                                        <li
-                                                            v-for="file in category.files"
-                                                            :key="file.id"
-                                                            class="ml-4 mb-2 p-2 bg-gray-200 border border-gray-300 rounded"
-                                                        >
-                                                            <h4
-                                                                class="font-semibold text-md text-gray-700"
-                                                            >
-                                                                {{
-                                                                    file.nombre_archivo
-                                                                }}
-                                                            </h4>
-                                                            <a
-                                                                :href="
-                                                                    file.ubicacion_archivo
-                                                                "
-                                                                class="text-blue-500 hover:underline"
-                                                                >Ver PDF</a
-                                                            >
+                                                        <li v-for="file in category.files" :key="file.id" class="ml-4 mb-2 p-2 bg-gray-200 border border-gray-300 rounded">
+                                                            <h4 class="font-semibold text-md text-gray-700">{{ file.nombre_archivo }}</h4>
+                                                            <a :href="file.ubicacion_archivo" class="text-blue-500 hover:underline">Ver PDF</a>
                                                         </li>
                                                     </ul>
                                                     <!-- Mostrar subcategorías -->
                                                     <ul>
-                                                        <li
-                                                            v-for="subcategory in subcategorias.filter(
-                                                                (sub) =>
-                                                                    sub.categoria_padre ===
-                                                                    category.id
-                                                            )"
-                                                            :key="
-                                                                subcategory.id
-                                                            "
-                                                            class="ml-4 mb-2 p-2 bg-gray-200 border border-gray-300 rounded"
-                                                        >
-                                                            <h4
-                                                                @click="
-                                                                    toggleSubcategory(
-                                                                        subcategory
-                                                                    )
-                                                                "
-                                                                class="font-semibold text-md text-gray-700 cursor-pointer"
-                                                            >
-                                                                {{
-                                                                    subcategory.nombre_categoria
-                                                                }}
+                                                        <li v-for="subcategory in category.subcategorias" :key="subcategory.id" class="ml-4 mb-2 p-2 bg-gray-200 border border-gray-300 rounded">
+                                                            <h4 @click="toggleSubcategory(subcategory)" class="font-semibold text-md text-gray-700 cursor-pointer">
+                                                                {{ subcategory.nombre_categoria }}
                                                             </h4>
-                                                            <div
-                                                                v-if="
-                                                                    subcategory.expanded
-                                                                "
-                                                            >
+                                                            <div v-if="subcategory.expanded">
                                                                 <!-- Mostrar archivos de la subcategoría -->
                                                                 <ul>
-                                                                    <li
-                                                                        v-for="file in subcategory.files"
-                                                                        :key="
-                                                                            file.id
-                                                                        "
-                                                                        class="ml-4 mb-2 p-2 bg-gray-300 border border-gray-400 rounded"
-                                                                    >
-                                                                        <h5
-                                                                            class="font-semibold text-sm text-gray-600"
-                                                                        >
-                                                                            {{
-                                                                                file.nombre_archivo
-                                                                            }}
-                                                                        </h5>
-                                                                        <a
-                                                                            :href="
-                                                                                file.ubicacion_archivo
-                                                                            "
-                                                                            class="text-blue-500 hover:underline"
-                                                                            >Ver
-                                                                            PDF</a
-                                                                        >
+                                                                    <li v-for="file in subcategory.files" :key="file.id" class="ml-4 mb-2 p-2 bg-gray-300 border border-gray-400 rounded">
+                                                                        <h5 class="font-semibold text-sm text-gray-600">{{ file.nombre_archivo }}</h5>
+                                                                        <a :href="file.ubicacion_archivo" class="text-blue-500 hover:underline">Ver PDF</a>
                                                                     </li>
                                                                 </ul>
                                                             </div>
