@@ -49,6 +49,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/subcategorias/{id}', [CategoryController::class, 'updateSubcategoria']);
     Route::get('/categorias/{id}', [CategoryController::class, 'getCategoriaById']);
     Route::get('/subcategorias/{id}', [CategoryController::class, 'getSubcategoriaById']);
+    Route::delete('/categorias/{id}', [CategoryController::class, 'destroy']);
     Route::get('/tags', [TagController::class, 'index']);
 });
 

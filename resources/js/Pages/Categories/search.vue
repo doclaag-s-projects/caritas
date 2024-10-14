@@ -49,7 +49,7 @@
                         <button @click="editarModal(categoria.id, categoria.categoria_principal)" class="btn-accion editar">
                             <img src="/img/edit.svg" alt="Edit" class="w-8 h-8" />
                         </button>
-                        <button @click="eliminarCategoria(categoria.id, categoria.categoria_principal)" class="btn-accion eliminar">
+                        <button @click="confirmarEliminacion(categoria.id)" class="btn-accion eliminar">
                             <img src="/img/trash.svg" alt="Trash" class="w-8 h-8" />
                         </button>
                     </td>
@@ -151,6 +151,22 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Confirmación Eliminación -->
+    <div v-if="showConfirmacionEliminacion" class="modal">
+        <div class="modal-content">
+            <span @click="showConfirmacionEliminacion = false" class="close">&times;</span>
+            <h2>Confirmar Eliminación</h2>
+            <div class="icono-container">
+                <img src="/img/warning.svg" alt="Warning" class="icono-advertencia">
+            </div>
+            <p>¿Estás seguro de que deseas eliminar esta categoría?</p>
+            <div class="modal-buttons">
+                <button @click="eliminarCategoria(confirmarEliminacionId)" class="btn-aceptar">Eliminar</button>
+                <button @click="showConfirmacionEliminacion = false" class="btn-cancelar">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -167,6 +183,8 @@ export default {
             showModalSubcategoria: false,
             showModalEditarCategoria: false,
             showModalEditarSubcategoria: false,
+            showConfirmacionEliminacion: false,
+            confirmarEliminacionId: null,
             nombreCategoria: '',
             descripcionCategoria: '',
             nombreSubcategoria: '',
@@ -294,7 +312,7 @@ export default {
                 const response = await axios.post('/subcategorias/crear', {
                     nombre_categoria: this.nombreSubcategoria,
                     descripcion_categoria: this.descripcionSubcategoria,
-                    categoria_padre: this.categoriaPrincipal, // Asegúrate de que este es el ID
+                    categoria_padre: this.categoriaPrincipal,
                 });
                 console.log(response.data);
                 this.categorias.push(response.data.subcategoria);
@@ -302,13 +320,27 @@ export default {
                 this.nombreSubcategoria = '';
                 this.descripcionSubcategoria = '';
                 this.categoriaPrincipal = '';
-                this.obtenerCategoriasRecursivas(); // Actualizar la lista de categorías
+                this.obtenerCategoriasRecursivas();
             } catch (error) {
                 console.error('Error al guardar la subcategoría:', error);
             }
         },
-        eliminarCategoria(id) {
-            console.log("Eliminar categoría: ", id);
+       confirmarEliminacion(id) {
+            this.confirmarEliminacionId = id;
+            this.showConfirmacionEliminacion = true;
+        },
+        async eliminarCategoria(id) {
+            try {
+                const response = await axios.delete(`/categorias/${id}`);
+                console.log(response.data);
+                this.obtenerCategoriasRecursivas();
+                this.showConfirmacionEliminacion = false;
+            } catch (error) {
+                console.error('Error al eliminar la categoría:', error);
+                if (error.response && error.response.data && error.response.data.error) {
+                    alert(error.response.data.error);
+                }
+            }
         },
         getNivelClass(nivel) {
             return `nivel-${nivel}`;
@@ -410,31 +442,42 @@ export default {
 }
 
 .modal {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
-  background-color: #fefefe;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-  max-width: 500px;
-  border-radius: 10px;
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: start;
 }
 
 .modal-content h2 {
-  text-align: center;
-  margin-bottom: 20px;
+    display: flex;
+    align-items: start;
+    justify-content: start;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.modal-content p {
+    font-size: 18px;
+    margin-bottom: 20px;
 }
 
 .modal-content label {
@@ -456,6 +499,17 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.icono-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.icono-advertencia {
+    width: 20%;
+    height: 20%;
 }
 
 .btn-cancelar {

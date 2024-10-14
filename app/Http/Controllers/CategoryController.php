@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\CategoryModel;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class CategoryController extends Controller
@@ -142,9 +143,25 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $categoria = CategoryModel::findOrFail($id);
+    
+        // Verificación 1: Validar que no tenga subcategorías
+        if ($categoria->categoria_principal == 1) {
+            $subcategorias = CategoryModel::where('categoria_padre', $id)->where('categoria_principal', 0)->exists();
+            if ($subcategorias) {
+                return response()->json(['error' => 'La categoría principal tiene subcategorías asociadas y no puede ser eliminada.'], 400);
+            }
+        }
+    
+        // Verificación 2: Validar que no tenga relación con archivos
+        $archivoRelacion = DB::table('archivos_categorias')->where('categoria_id', $id)->first();
+        if ($archivoRelacion) {
+            $archivo = DB::table('archivos')->where('id', $archivoRelacion->archivo_id)->first();
+            return response()->json(['error' => 'La categoría tiene relación con el archivo: ' . $archivo->nombre], 400);
+        }
+    
+        // Verificación 3: Eliminar la categoría
         $categoria->delete();
-
-        return redirect()->route('categories.index')->with('success', 'Categoría eliminada exitosamente.');
+    
+        return response()->json(['message' => 'Categoría eliminada exitosamente.']);
     }
-
 }
