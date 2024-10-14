@@ -28,7 +28,7 @@ const form = ref({
     publico: 0,
     categoria: '',
     subcategoria: '',
-    tag: '',
+    tag: null, // Permitir valores nulos
 });
 const notifications = ref([]);
 const resetTags = ref(false);
@@ -40,17 +40,13 @@ const userId = ref(null); // Variable para almacenar el ID del usuario autentica
 // Función para actualizar las etiquetas seleccionadas
 const updateSelectedTags = (newTags) => {
     selectedTags.value = newTags;
-    form.value.tag = selectedTags.value.join(',');
+    form.value.tag = selectedTags.value.length > 0 ? selectedTags.value.join(',') : null;
 };
 
 onMounted(async () => {
     const response = await axios.get('/categories');
     categoriasPrincipales.value = response.data.principales;
     await loadTags();
-
-    // Obtener el ID del usuario autenticado
-    const userResponse = await axios.get('/api/user');
-    userId.value = userResponse.data.id;
 });
 
 watch(() => form.value.categoria, async (newCategoriaId) => {
@@ -84,6 +80,10 @@ const validateAndUploadFile = async () => {
         showNotification('error', 'Por favor, selecciona una categoría.');
         return;
     }
+    if (!form.value.tag) {
+        showNotification('error', 'Por favor, selecciona al menos una etiqueta.');
+        return;
+    }
 
     try {
         await uploadFile();
@@ -105,22 +105,33 @@ const uploadFile = async (action = '') => {
     formData.append('categoria', form.value.categoria);
     formData.append('subcategoria', form.value.subcategoria);
     formData.append('tag', form.value.tag);
-    formData.append('user_id', userId.value); // Añadir el ID del usuario autenticado
 
     if (action) {
         formData.append('action', action);
     }
 
-    const response = await axios.post('/files/upload', formData);
-    if (response.status === 200) {
-        showNotification('success', 'Archivo subido exitosamente.');
-        selectedFile.value = null;
-        filePreviewUrl.value = null; // Limpiar la URL de previsualización
-        form.value.categoria = '';
-        form.value.subcategoria = '';
-        form.value.tag = '';
-        resetTags.value = true;
-        setTimeout(() => resetTags.value = false, 0);
+    try {
+        const response = await axios.post('/files/upload', formData);
+        if (response.status === 200) {
+            showNotification('success', 'Archivo subido exitosamente.');
+            selectedFile.value = null;
+            filePreviewUrl.value = null;
+            form.value.categoria = '';
+            form.value.subcategoria = '';
+            form.value.tag = null;
+            resetTags.value = true;
+            setTimeout(() => resetTags.value = false, 0);
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 500) {
+            showNotification('error', 'Error del servidor al subir el archivo. Por favor, verifica las etiquetas.');
+        } else if (error.response && error.response.status === 409) {
+            showFileModal.value = true;
+            modalMessage.value = error.response.data.message;
+        }
+        else {
+            showNotification('error', 'Error al subir el archivo. Por favor, inténtalo de nuevo.');
+        }
     }
 };
 
@@ -191,11 +202,15 @@ const handleSubcategoryUpdated = async () => {
         <div class="py-12 bg-gray-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <Switch v-model="form.publico" label="Público" class="w-1/5" />
                     <div class="p-6 flex flex-col lg:flex-row">
                         <!-- Previsualización del archivo PDF -->
                         <div v-if="filePreviewUrl" class="w-full lg:w-1/2 lg:pr-6 mb-6 lg:mb-0">
                             <h2 class="text-lg font-semibold text-gray-700 mb-2">Previsualización del archivo</h2>
-                            <iframe :src="filePreviewUrl" class="w-full h-96 border border-gray-200 rounded-md"></iframe>
+                            <div class="flex items-center space-x-4">
+                                <iframe :src="filePreviewUrl" class="w-4/5 h-96 border border-gray-200 rounded-md"></iframe>
+                                <!-- Switch para "publico" -->
+                            </div>
                         </div>
 
                         <div :class="['w-full', { 'lg:w-1/2 lg:pl-6': filePreviewUrl }]">
@@ -259,9 +274,6 @@ const handleSubcategoryUpdated = async () => {
                                         </button>
                                     </div>
                                 </div>
-
-                                <!-- Switch para "publico" -->
-                                <Switch v-model="form.publico" label="Público" />
 
                                 <!-- Botón para cargar archivo -->
                                 <PrimaryButton @click="validateAndUploadFile" class="w-full justify-center py-3 text-lg focus:ring-offset-2">

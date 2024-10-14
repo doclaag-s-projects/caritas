@@ -82,13 +82,16 @@ class FileController extends Controller
             'usuarios_id' => $userId,
         ]);
 
-        // Crear la relación en la tabla archivos_etiquetas
-        $tags = explode(',', $request->input('tag'));
-        foreach ($tags as $tag) {
-            FileTag::create([
-                'archivo_id' => $archivo->id,
-                'etiqueta_id' => $tag,
-            ]);
+        // Crear la relación en la tabla archivos_etiquetas si hay etiquetas
+        $tags = $request->input('tag');
+        if ($tags) {
+            $tagsArray = explode(',', $tags);
+            foreach ($tagsArray as $tag) {
+                FileTag::create([
+                    'archivo_id' => $archivo->id,
+                    'etiqueta_id' => $tag,
+                ]);
+            }
         }
 
         return response()->json(['message' => 'Archivo subido correctamente e insertado en la base de datos'], 200);

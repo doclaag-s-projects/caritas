@@ -1,6 +1,6 @@
 <template>
     <label class="inline-flex items-center cursor-pointer">
-      <span class="mr-2 text-gray-700 dark:text-gray-300">{{ label }}</span>
+      <span class="mr-2 ">{{ label }}</span>
       <div class="relative">
         <input type="checkbox" :checked="modelValue" @change="updateValue($event.target.checked)" class="sr-only" />
         <div class="block bg-gray-300 dark:bg-gray-600 w-14 h-8 rounded-full transition duration-300"></div>
