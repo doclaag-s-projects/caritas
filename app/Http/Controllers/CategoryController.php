@@ -153,11 +153,12 @@ class CategoryController extends Controller
         }
     
         // Verificación 2: Validar que no tenga relación con archivos
-        $archivoRelacion = DB::table('archivos_categorias')->where('categoria_id', $id)->first();
-        if ($archivoRelacion) {
-            $archivo = DB::table('archivos')->where('id', $archivoRelacion->archivo_id)->first();
-            return response()->json(['error' => 'La categoría tiene relación con el archivo: ' . $archivo->nombre], 400);
-        }
+$archivoRelacion = DB::table('archivos_categorias')->where('categoria_id', $id)->first();
+if ($archivoRelacion) {
+    $archivo = DB::table('archivos')->where('id', $archivoRelacion->archivo_id)->first();
+    return response()->json(['error' => 'La categoría tiene relación con el archivo: ' . $archivo->nombre_archivo], 400);
+}
+
     
         // Verificación 3: Eliminar la categoría
         $categoria->delete();

@@ -231,154 +231,199 @@ export default {
             return filtered;
         }
     },
+
     methods: {
-        async obtenerCategoriasRecursivas() {
-            try {
-                const response = await axios.get('/categorias/recursivas');
-                this.categorias = response.data;
-                console.log(this.categorias);
-            } catch (error) {
-                console.error('Error al obtener las categorías recursivas:', error);
-                this.addNotification('error', 'Error al obtener las categorías recursivas');
-            }
-        },
-        async obtenerCategoriasPrincipales() {
-            try {
-                const response = await axios.get('/categorias/principales');
-                this.categoriasPrincipales = response.data;
-                console.log(this.categoriasPrincipales);
-            } catch (error) {
-                console.error('Error al obtener las categorías principales:', error);
-                this.addNotification('error', 'Error al obtener las categorías principales');
-            }
-        },
-        buscarCategoria() {
-            console.log("Buscando categoría: ", this.searchQuery);
-            this.obtenerCategoriasRecursivas();
-        },
-        agregarCategoria() {
-            this.showModalCategoria = true;
-        },
-        agregarSubcategoria() {
-            this.obtenerCategoriasPrincipales();
-            this.showModalSubcategoria = true;
-        },
-        async editarModal(id, categoriaPrincipal) {
-            try {
-                if (categoriaPrincipal === 1) {
-                    const response = await axios.get(`/categorias/${id}`);
-                    this.categoriaEditada = response.data;
-                    this.showModalEditarCategoria = true;
-                } else {
-                    const response = await axios.get(`/subcategorias/${id}`);
-                    this.subcategoriaEditada = response.data;
-                    this.obtenerCategoriasPrincipales();
-                    this.showModalEditarSubcategoria = true;
-                }
-            } catch (error) {
-                console.error('Error al obtener la categoría o subcategoría:', error);
-                this.addNotification('error', 'Error al obtener la categoría o subcategoría');
-            }
-        },
-        async guardarCategoriaEditada() {
-            try {
-                console.log(this.categoriaEditada);
-                const response = await axios.put(`/categorias/${this.categoriaEditada.id}`, {
-                    nombre_categoria: this.categoriaEditada.nombre_categoria,
-                    descripcion_categoria: this.categoriaEditada.descripcion_categoria
-                });
-                console.log(response.data);
-                this.showModalEditarCategoria = false;
-                this.obtenerCategoriasRecursivas();
-                this.addNotification('success', 'Categoría actualizada exitosamente');
-            } catch (error) {
-                console.error('Error al actualizar la categoría:', error);
-                this.addNotification('error', 'Error al actualizar la categoría');
-            }
-        },
-        async guardarSubcategoriaEditada() {
-            try {
-                await axios.put(`/subcategorias/${this.subcategoriaEditada.id}`, {
-                    nombre_categoria: this.subcategoriaEditada.nombre_categoria,
-                    descripcion_categoria: this.subcategoriaEditada.descripcion_categoria,
-                    categoria_padre: this.subcategoriaEditada.categoria_padre
-                });
-                this.showModalEditarSubcategoria = false;
+        confirmarEliminacion(id) {
+        this.confirmarEliminacionId = id;
+        this.showConfirmacionEliminacion = true;
+    },
+    validarCampos(texto) {
+        const regex = /^[a-zA-Z0-9]+$/; // Permite solo letras y números
+        // Comprobar que no hay espacios ni símbolos al inicio y al final
+        return texto.trim().length > 0 && regex.test(texto.trim());
+    },
+    async obtenerCategoriasRecursivas() {
+        try {
+            const response = await axios.get('/categorias/recursivas');
+            this.categorias = response.data;
+            console.log(this.categorias);
+        } catch (error) {
+            console.error('Error al obtener las categorías recursivas:', error);
+            this.addNotification('error', 'Error al obtener las categorías recursivas');
+        }
+    },
+    async obtenerCategoriasPrincipales() {
+        try {
+            const response = await axios.get('/categorias/principales');
+            this.categoriasPrincipales = response.data;
+            console.log(this.categoriasPrincipales);
+        } catch (error) {
+            console.error('Error al obtener las categorías principales:', error);
+            this.addNotification('error', 'Error al obtener las categorías principales');
+        }
+    },
+    buscarCategoria() {
+        console.log("Buscando categoría: ", this.searchQuery);
+        this.obtenerCategoriasRecursivas();
+    },
+    agregarCategoria() {
+        this.showModalCategoria = true;
+    },
+    agregarSubcategoria() {
+        this.obtenerCategoriasPrincipales();
+        this.showModalSubcategoria = true;
+    },
+    async editarModal(id, categoriaPrincipal) {
+        try {
+            if (categoriaPrincipal === 1) {
+                const response = await axios.get(`/categorias/${id}`);
+                this.categoriaEditada = response.data;
+                this.showModalEditarCategoria = true;
+            } else {
+                const response = await axios.get(`/subcategorias/${id}`);
+                this.subcategoriaEditada = response.data;
                 this.obtenerCategoriasPrincipales();
-                this.addNotification('success', 'Subcategoría actualizada exitosamente');
-            } catch (error) {
-                console.error('Error al actualizar la subcategoría:', error);
-                this.addNotification('error', 'Error al actualizar la subcategoría');
+                this.showModalEditarSubcategoria = true;
             }
-        },
-        async guardarCategoria() {
-            try {
-                const response = await axios.post('/categorias/crear', {
-                    nombre_categoria: this.nombreCategoria,
-                    descripcion_categoria: this.descripcionCategoria,
-                });
-                console.log(response.data);
-                this.categorias.push(response.data.categoria);
-                this.showModalCategoria = false;
-                this.nombreCategoria = '';
-                this.descripcionCategoria = '';
-                this.obtenerCategoriasRecursivas();
-                this.addNotification('success', 'Categoría creada exitosamente');
-            } catch (error) {
-                console.error('Error al guardar la categoría:', error);
-                this.addNotification('error', 'Error al guardar la categoría');
-            }
-        },
-        async guardarSubcategoria() {
-            try {
-                const response = await axios.post('/subcategorias/crear', {
-                    nombre_categoria: this.nombreSubcategoria,
-                    descripcion_categoria: this.descripcionSubcategoria,
-                    categoria_padre: this.categoriaPrincipal,
-                });
-                console.log(response.data);
-                this.categorias.push(response.data.subcategoria);
-                this.showModalSubcategoria = false;
-                this.nombreSubcategoria = '';
-                this.descripcionSubcategoria = '';
-                this.categoriaPrincipal = '';
-                this.obtenerCategoriasRecursivas();
-                this.addNotification('success', 'Subcategoría creada exitosamente');
-            } catch (error) {
-                console.error('Error al guardar la subcategoría:', error);
-                this.addNotification('error', 'Error al guardar la subcategoría');
-            }
-        },
-    confirmarEliminacion(id) {
-            this.confirmarEliminacionId = id;
-            this.showConfirmacionEliminacion = true;
-        },
-        async eliminarCategoria(id) {
+        } catch (error) {
+            console.error('Error al obtener la categoría o subcategoría:', error);
+            this.addNotification('error', 'Error al obtener la categoría o subcategoría');
+        }
+    },
+    async guardarCategoriaEditada() {
+        if (!this.validarCampos(this.categoriaEditada.nombre_categoria) || !this.validarCampos(this.categoriaEditada.descripcion_categoria)) {
+            this.addNotification('error', 'El nombre y la descripción no deben contener espacios ni símbolos.');
+            return;
+        }
+        try {
+            console.log(this.categoriaEditada);
+            const response = await axios.put(`/categorias/${this.categoriaEditada.id}`, {
+                nombre_categoria: this.categoriaEditada.nombre_categoria,
+                descripcion_categoria: this.categoriaEditada.descripcion_categoria
+            });
+            console.log(response.data);
+            this.showModalEditarCategoria = false;
+            this.obtenerCategoriasRecursivas();
+            this.addNotification('success', 'Categoría actualizada exitosamente');
+        } catch (error) {
+            console.error('Error al actualizar la categoría:', error);
+            this.addNotification('error', 'Error al actualizar la categoría');
+        }
+    },
+    async guardarSubcategoriaEditada() {
+        if (!this.validarCampos(this.subcategoriaEditada.nombre_categoria) || !this.validarCampos(this.subcategoriaEditada.descripcion_categoria)) {
+            this.addNotification('error', 'El nombre y la descripción no deben contener espacios ni símbolos.');
+            return;
+        }
+        try {
+            await axios.put(`/subcategorias/${this.subcategoriaEditada.id}`, {
+                nombre_categoria: this.subcategoriaEditada.nombre_categoria,
+                descripcion_categoria: this.subcategoriaEditada.descripcion_categoria,
+                categoria_padre: this.subcategoriaEditada.categoria_padre
+            });
+            this.showModalEditarSubcategoria = false;
+            this.obtenerCategoriasPrincipales();
+            this.addNotification('success', 'Subcategoría actualizada exitosamente');
+        } catch (error) {
+            console.error('Error al actualizar la subcategoría:', error);
+            this.addNotification('error', 'Error al actualizar la subcategoría');
+        }
+    },
+    async guardarCategoria() {
+        if (!this.validarCampos(this.nombreCategoria) || !this.validarCampos(this.descripcionCategoria)) {
+            this.addNotification('error', 'El nombre y la descripción no deben contener espacios ni símbolos.');
+            this.showModalCategoria = false;
+            return;
+        }
+        try {
+            const response = await axios.post('/categorias/crear', {
+                nombre_categoria: this.nombreCategoria,
+                descripcion_categoria: this.descripcionCategoria,
+            });
+            console.log(response.data);
+            this.categorias.push(response.data.categoria);
+            this.showModalCategoria = false;
+            this.nombreCategoria = '';
+            this.descripcionCategoria = '';
+            this.obtenerCategoriasRecursivas();
+            this.addNotification('success', 'Categoría creada exitosamente');
+        } catch (error) {
+            console.error('Error al guardar la categoría:', error);
+            this.addNotification('error', 'Error al guardar la categoría');
+        }
+    },
+    async guardarSubcategoria() {
+        if (!this.validarCampos(this.nombreSubcategoria) || !this.validarCampos(this.descripcionSubcategoria)) {
+            this.addNotification('error', 'El nombre y la descripción no deben contener espacios ni símbolos.');
+            return;
+        }
+        try {
+            const response = await axios.post('/subcategorias/crear', {
+                nombre_categoria: this.nombreSubcategoria,
+                descripcion_categoria: this.descripcionSubcategoria,
+                categoria_padre: this.categoriaPrincipal,
+            });
+            console.log(response.data);
+            this.categorias.push(response.data.subcategoria);
+            this.showModalSubcategoria = false;
+            this.nombreSubcategoria = '';
+            this.descripcionSubcategoria = '';
+            this.categoriaPrincipal = '';
+            this.obtenerCategoriasRecursivas();
+            this.addNotification('success', 'Subcategoría creada exitosamente');
+        } catch (error) {
+            console.error('Error al guardar la subcategoría:', error);
+            this.addNotification('error', 'Error al guardar la subcategoría');
+        }
+    },
+confirmarEliminacion(id) {
+        this.confirmarEliminacionId = id;
+        this.showConfirmacionEliminacion = true;
+    },
+
+async eliminarCategoria(id) {
     try {
         const response = await axios.delete(`/categorias/${id}`);
         console.log(response.data);
         this.obtenerCategoriasRecursivas();
-        this.showConfirmacionEliminacion = false;
         this.addNotification('success', 'Categoría eliminada exitosamente');
     } catch (error) {
         console.error('Error al eliminar la categoría:', error);
-        this.addNotification('error', 'Error al eliminar la categoría');
+
+        // Verificar el objeto de error completo
+        console.error('Estructura del error:', error.response);
+
+        if (error.response && error.response.data && error.response.data.error) {
+            // Mostrar el mensaje de error del backend en la notificación
+            this.addNotification('error', error.response.data.error);
+        } else {
+            // Mensaje genérico si no se puede determinar el error exacto
+            this.addNotification('error', 'Error al eliminar la categoría');
+        }
+    } finally {
+        // Asegurarse de que el modal se cierre en cualquier caso (éxito o error)
+        this.showConfirmacionEliminacion = false;
+    }
+        
+    },
+
+
+
+    getNivelClass(nivel) {
+        return `nivel-${nivel}`;
+    },
+    addNotification(type, message) {
+        const id = Date.now();
+        this.notifications.push({ id, type, message });
+    },
+    removeNotification(id) {
+        this.notifications = this.notifications.filter(notification => notification.id !== id);
     }
 },
-        getNivelClass(nivel) {
-            return `nivel-${nivel}`;
-        },
-        addNotification(type, message) {
-            const id = Date.now();
-            this.notifications.push({ id, type, message });
-        },
-        removeNotification(id) {
-            this.notifications = this.notifications.filter(notification => notification.id !== id);
-        }
-    },
-    mounted() {
-        this.obtenerCategoriasRecursivas();
-    }
+mounted() {
+    this.obtenerCategoriasRecursivas();
+}
+
 };
 </script>
 
