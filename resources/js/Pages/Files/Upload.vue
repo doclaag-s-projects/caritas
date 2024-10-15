@@ -94,7 +94,6 @@ const validateAndUploadFile = async () => {
     } catch ( error ) {
         if ( error.response && error.response.status === 409 ) {
             showFileModal.value = true;
-            console.log(error.response.data.message)
             modalMessage.value = error.response.data.message;
         } else {
             showNotification( 'error', 'Error al subir el archivo' );
@@ -146,7 +145,8 @@ const uploadFile = async ( action = '' ) => {
 
 const handleModalAction = async ( action ) => {
     showFileModal.value = false;
-    await uploadFile( action );
+    await uploadFile(action);
+    reloadView();
 };
 
 // Función para mostrar notificaciones
@@ -156,6 +156,11 @@ const showNotification = ( type, message ) => {
     setTimeout( () => {
         notifications.value = notifications.value.filter( notification => notification.id !== id );
     }, 5000 );
+};
+
+// Función para recargar la vista
+const reloadView = () => {
+    window.location.reload();
 };
 
 // Modal form functions
@@ -198,8 +203,7 @@ const handleSubcategoryUpdated = async () => {
     if ( form.value.categoria ) {
         const response = await axios.get( `/categories/${ form.value.categoria }/subcategories` );
         subcategorias.value = response.data;
-    }
-};
+}};
 </script>
 
 <template>
