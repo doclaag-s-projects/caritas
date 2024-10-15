@@ -129,6 +129,7 @@ const uploadFile = async ( action = '' ) => {
             form.value.tag = null;
             resetTags.value = true;
             setTimeout( () => resetTags.value = false, 0 );
+            reloadView();
         }
     } catch ( error ) {
         if ( error.response && error.response.status === 500 ) {
