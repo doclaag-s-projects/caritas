@@ -51,9 +51,37 @@ class FileController extends Controller
         $filePath = $destinationPath . '/' . $fileName;
 
         // Verificar si el archivo ya existe
-        if (Storage::exists($filePath)) {
+        $existingFile = File::where('nombre_archivo', $fileName)
+                            ->where('ubicacion_archivo', Storage::url($filePath))
+                            ->first();
+
+        if ($existingFile) {
             if ($request->input('action') === 'replace') {
                 Storage::delete($filePath);
+                $file->storeAs($destinationPath, $fileName);
+                $fileUrl = Storage::url($filePath);
+
+                // Actualizar el registro del archivo existente
+                $existingFile->update([
+                    'ubicacion_archivo' => $fileUrl,
+                    'estado' => $request->input('estado', 0),
+                    'publico' => $request->input('publico', 0),
+                ]);
+
+                // Actualizar las etiquetas del archivo existente
+                FileTag::where('archivo_id', $existingFile->id)->delete();
+                $tags = $request->input('tag');
+                if ($tags) {
+                    $tagsArray = explode(',', $tags);
+                    foreach ($tagsArray as $tag) {
+                        FileTag::create([
+                            'archivo_id' => $existingFile->id,
+                            'etiqueta_id' => $tag,
+                        ]);
+                    }
+                }
+
+                return response()->json(['message' => 'Archivo reemplazado correctamente y registro actualizado'], 200);
             } elseif ($request->input('action') === 'rename') {
                 $fileName = $cleanName . '_' . time() . '.' . $extension;
                 $filePath = $destinationPath . '/' . $fileName;
@@ -64,7 +92,6 @@ class FileController extends Controller
 
         // Guardar el archivo en la carpeta correspondiente
         $file->storeAs($destinationPath, $fileName);
-
         $fileUrl = Storage::url($filePath);
 
         // Verificar si el usuario está autenticado
