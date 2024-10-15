@@ -6,7 +6,7 @@
         <img src="/img/logo-letters.png" alt="Logo" class="logo">
         <h1>Biblioteca Publica</h1>
       </div>
-      <button class="login-button">Iniciar Sesion</button>
+      <button class="login-button" @click="goToLogin">Iniciar Sesion</button>
     </header>
 
     <div class="main-content">
@@ -15,15 +15,15 @@
         <div v-for="(area, areaIndex) in areas" :key="areaIndex" class="area">
           <button @click="toggleArea(areaIndex)" class="area-toggle">
             <span class="area-icon">{{ area.icon }}</span>
-            {{ area.name }}
-            <span class="toggle-icon">{{ area.isOpen ? '▼' : '▲' }}</span>
+            <span class="area-text">{{ area.name }}</span>
+            <span class="toggle-icon">{{ area.isOpen ? '▲' : '▼' }}</span>
           </button>
 
           <div v-if="area.isOpen">
             <div v-for="(subArea, subIndex) in area.subAreas" :key="subIndex" class="sub-area">
               <button @click="toggleSubArea(areaIndex, subIndex)" class="sub-area-toggle">
                 {{ subArea.name }}
-                <span class="toggle-icon">{{ subArea.isOpen ? '▼' : '▲' }}</span>
+                <span class="toggle-icon">{{ subArea.isOpen ? '▲' : '▼' }}</span>
               </button>
               <ul v-if="subArea.isOpen">
                 <li v-for="(item, itemIndex) in subArea.items" :key="itemIndex">
@@ -147,6 +147,10 @@ export default {
     searchFiles() {
       // Aquí puedes manejar la lógica adicional de búsqueda si es necesario
       console.log(`Buscando archivos con la consulta: ${this.searchQuery}`);
+    },
+    // Método para redirigir a la pantalla de login
+    goToLogin() {
+      this.$router.push({ name: 'Login' });
     }
   }
 }
@@ -214,15 +218,16 @@ header {
   border-radius: 5px;
 }
 .sidebar {
-  width: 300px;
+  width: 350px;
   padding: 25px;
   background-color: #f8f9fa;
   overflow-y: auto;
   height: calc(100vh - 60px);
+  
 }
 .area-toggle {
   width: 100%;
-  text-align: left;
+  text-align: right;
   padding: 15px;
   background: none;
   border: none;
@@ -231,20 +236,30 @@ header {
   font-weight: bold;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: left;
+  /* justify-content: flex-end; */
+ 
+}
+.area-text {
+  flex-grow: 1; /* Asegura que el texto ocupe el espacio disponible */
+  text-align: left;
 }
 .area-icon {
   margin-right: 10px;
+  justify-content: flex-end;
+  
 }
 .toggle-icon {
   font-size: 12px;
+  justify-content: flex-end;
+
 }
 .sub-area {
   margin-left: 20px;
 }
 .sub-area-toggle {
   width: 100%;
-  text-align: left;
+  text-align: right;
   padding: 8px;
   background: none;
   border: none;
