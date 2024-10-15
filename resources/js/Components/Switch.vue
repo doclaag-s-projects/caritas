@@ -1,21 +1,20 @@
 <template>
     <label class="inline-flex items-center cursor-pointer">
-      <span class="mr-2 ">{{ label }}</span>
+      <span class="mr-3 text-sm font-medium text-gray-700">{{ label }}</span>
       <div class="relative">
-        <input type="checkbox" :checked="modelValue" @change="updateValue($event.target.checked)" class="sr-only" />
-        <div class="block bg-gray-300 dark:bg-gray-600 w-14 h-8 rounded-full transition duration-300"></div>
-        <div
-          :class="[
-            'dot absolute top-1 bg-white w-6 h-6 rounded-full transition transform duration-300',
-            modelValue ? 'translate-x-6' : 'translate-x-0'
-          ]"
-        ></div>
+        <input
+          type="checkbox"
+          :checked="modelValue"
+          @change="updateValue($event.target.checked)"
+          class="sr-only peer"
+        />
+        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
       </div>
     </label>
   </template>
 
   <script setup>
-  import { defineProps, defineEmits } from 'vue'
+  import { defineProps, defineEmits, watch } from 'vue';
 
   const props = defineProps({
     modelValue: {
@@ -26,25 +25,15 @@
       type: String,
       default: '',
     },
-  })
+  });
 
-  const emit = defineEmits(['update:modelValue'])
+  const emit = defineEmits(['update:modelValue']);
 
   const updateValue = (value) => {
-    emit('update:modelValue', value)
-  }
+    emit('update:modelValue', value);
+  };
+
+  watch(() => props.modelValue, (newValue) => {
+    emit('update:modelValue', newValue);
+  });
   </script>
-
-  <style scoped>
-  input:checked + .block {
-    background-color: #4f46e5;
-  }
-
-  .block {
-    transition: background-color 0.3s ease;
-  }
-
-  .dot {
-    transition: transform 0.3s ease;
-  }
-  </style>
