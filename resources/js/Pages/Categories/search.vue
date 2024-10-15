@@ -167,12 +167,24 @@
             </div>
         </div>
     </div>
+    <!-- Toast Notifications -->
+    <ToastNotification
+        v-for="notification in notifications"
+        :key="notification.id"
+        :type="notification.type"
+        :message="notification.message"
+        @close="removeNotification(notification.id)"
+    />
 </template>
 
 <script>
 import axios from 'axios';
+import ToastNotification from '@/Components/ToastNotification.vue';
 
 export default {
+    components: {
+        ToastNotification
+    },
     data() {
         return {
             searchQuery: "",
@@ -202,7 +214,8 @@ export default {
                 categoria_padre: null
             },
             categorias: [],
-            categoriasPrincipales: [] // Nuevo estado para categorías principales
+            categoriasPrincipales: [],
+            notifications: [] // Estado para las notificaciones
         };
     },
     computed: {
@@ -226,6 +239,7 @@ export default {
                 console.log(this.categorias);
             } catch (error) {
                 console.error('Error al obtener las categorías recursivas:', error);
+                this.addNotification('error', 'Error al obtener las categorías recursivas');
             }
         },
         async obtenerCategoriasPrincipales() {
@@ -235,6 +249,7 @@ export default {
                 console.log(this.categoriasPrincipales);
             } catch (error) {
                 console.error('Error al obtener las categorías principales:', error);
+                this.addNotification('error', 'Error al obtener las categorías principales');
             }
         },
         buscarCategoria() {
@@ -262,6 +277,7 @@ export default {
                 }
             } catch (error) {
                 console.error('Error al obtener la categoría o subcategoría:', error);
+                this.addNotification('error', 'Error al obtener la categoría o subcategoría');
             }
         },
         async guardarCategoriaEditada() {
@@ -274,8 +290,10 @@ export default {
                 console.log(response.data);
                 this.showModalEditarCategoria = false;
                 this.obtenerCategoriasRecursivas();
+                this.addNotification('success', 'Categoría actualizada exitosamente');
             } catch (error) {
                 console.error('Error al actualizar la categoría:', error);
+                this.addNotification('error', 'Error al actualizar la categoría');
             }
         },
         async guardarSubcategoriaEditada() {
@@ -287,8 +305,10 @@ export default {
                 });
                 this.showModalEditarSubcategoria = false;
                 this.obtenerCategoriasPrincipales();
+                this.addNotification('success', 'Subcategoría actualizada exitosamente');
             } catch (error) {
                 console.error('Error al actualizar la subcategoría:', error);
+                this.addNotification('error', 'Error al actualizar la subcategoría');
             }
         },
         async guardarCategoria() {
@@ -302,9 +322,11 @@ export default {
                 this.showModalCategoria = false;
                 this.nombreCategoria = '';
                 this.descripcionCategoria = '';
-                this.obtenerCategoriasRecursivas(); // Actualizar la lista de categorías
+                this.obtenerCategoriasRecursivas();
+                this.addNotification('success', 'Categoría creada exitosamente');
             } catch (error) {
                 console.error('Error al guardar la categoría:', error);
+                this.addNotification('error', 'Error al guardar la categoría');
             }
         },
         async guardarSubcategoria() {
@@ -321,29 +343,37 @@ export default {
                 this.descripcionSubcategoria = '';
                 this.categoriaPrincipal = '';
                 this.obtenerCategoriasRecursivas();
+                this.addNotification('success', 'Subcategoría creada exitosamente');
             } catch (error) {
                 console.error('Error al guardar la subcategoría:', error);
+                this.addNotification('error', 'Error al guardar la subcategoría');
             }
         },
-       confirmarEliminacion(id) {
+    confirmarEliminacion(id) {
             this.confirmarEliminacionId = id;
             this.showConfirmacionEliminacion = true;
         },
         async eliminarCategoria(id) {
-            try {
-                const response = await axios.delete(`/categorias/${id}`);
-                console.log(response.data);
-                this.obtenerCategoriasRecursivas();
-                this.showConfirmacionEliminacion = false;
-            } catch (error) {
-                console.error('Error al eliminar la categoría:', error);
-                if (error.response && error.response.data && error.response.data.error) {
-                    alert(error.response.data.error);
-                }
-            }
-        },
+    try {
+        const response = await axios.delete(`/categorias/${id}`);
+        console.log(response.data);
+        this.obtenerCategoriasRecursivas();
+        this.showConfirmacionEliminacion = false;
+        this.addNotification('success', 'Categoría eliminada exitosamente');
+    } catch (error) {
+        console.error('Error al eliminar la categoría:', error);
+        this.addNotification('error', 'Error al eliminar la categoría');
+    }
+},
         getNivelClass(nivel) {
             return `nivel-${nivel}`;
+        },
+        addNotification(type, message) {
+            const id = Date.now();
+            this.notifications.push({ id, type, message });
+        },
+        removeNotification(id) {
+            this.notifications = this.notifications.filter(notification => notification.id !== id);
         }
     },
     mounted() {
@@ -510,6 +540,188 @@ export default {
 .icono-advertencia {
     width: 20%;
     height: 20%;
+}
+
+.btn-cancelar {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-aceptar {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Estilos para los diferentes niveles */
+.nivel-1 {
+    background-color: #f5f5f5; /* Gris muy claro */
+    color: black;
+}
+
+.nivel-2 {
+    background-color: #bdbdbd; /* Gris medio */
+    color: black;
+}
+</style>
+
+<style scoped>
+.categoria-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.buscador {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 20px;
+}
+
+.buscador input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.buscador select {
+    margin-left: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.buscador button {
+    color: white;
+    border: none;
+    padding: 10px;
+    margin-left: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn-agregar {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.btn-agregar img {
+    margin-right: 0.5rem;
+}
+
+.tabla-categorias {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-categorias th,
+.tabla-categorias td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.tabla-categorias th {
+    background-color: #1f2937;
+    color: white;
+}
+
+.hidden-column {
+    display: none;
+}
+
+.btn-accion {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 10px;
+}
+
+.modal-content h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.modal-content label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .btn-cancelar {
