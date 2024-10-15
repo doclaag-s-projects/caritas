@@ -83,8 +83,16 @@ class FileController extends Controller
 
                 return response()->json(['message' => 'Archivo reemplazado correctamente y registro actualizado'], 200);
             } elseif ($request->input('action') === 'rename') {
-                $fileName = $cleanName . '_' . time() . '.' . $extension;
-                $filePath = $destinationPath . '/' . $fileName;
+                // Obtener el nuevo nombre del archivo desde la solicitud
+                $newFileName = $request->input('newFileName');
+                if ($newFileName) {
+                    $cleanNewFileName = $this->validarNombre($newFileName);
+                    $fileName = $cleanNewFileName . '.' . $extension;
+                    $filePath = $destinationPath . '/' . $fileName;
+                } else {
+                    $fileName = $cleanName . '_' . time() . '.' . $extension;
+                    $filePath = $destinationPath . '/' . $fileName;
+                }
             } else {
                 return response()->json(['message' => 'El archivo ya existe', 'action' => 'exists'], 409);
             }
