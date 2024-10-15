@@ -67,26 +67,28 @@ const handleFileUpload = (event) => {
             return;
         }
         selectedFile.value = file;
-        filePreviewUrl.value = URL.createObjectURL(file); // Crear URL para la previsualización
+        filePreviewUrl.value = URL.createObjectURL(file);
     }
 };
 
 const validateAndUploadFile = async () => {
     if (!selectedFile.value) {
-        showNotification('error', 'Por favor, selecciona un archivo primero.');
+        showNotification('error', 'Por favor seleccione un archivo.');
         return;
     }
     if (!form.value.categoria) {
-        showNotification('error', 'Por favor, selecciona una categoría.');
+        showNotification('error', 'Por favor seleccione una categoría.');
         return;
     }
     if (!form.value.tag) {
-        showNotification('error', 'Por favor, selecciona al menos una etiqueta.');
+        showNotification('error', 'Por favor seleccione al menos una etiqueta.');
         return;
     }
 
     try {
         await uploadFile();
+        showNotification('success', 'Archivo subido correctamente.');
+        reloadView();
     } catch (error) {
         if (error.response && error.response.status === 409) {
             showFileModal.value = true;
@@ -123,21 +125,14 @@ const uploadFile = async (action = '') => {
             setTimeout(() => resetTags.value = false, 0);
         }
     } catch (error) {
-        if (error.response && error.response.status === 500) {
-            showNotification('error', 'Error del servidor al subir el archivo. Por favor, verifica las etiquetas.');
-        } else if (error.response && error.response.status === 409) {
-            showFileModal.value = true;
-            modalMessage.value = error.response.data.message;
-        }
-        else {
-            showNotification('error', 'Error al subir el archivo. Por favor, inténtalo de nuevo.');
-        }
+        throw error;
     }
 };
 
 const handleModalAction = async (action) => {
     showFileModal.value = false;
     await uploadFile(action);
+    reloadView();
 };
 
 // Función para mostrar notificaciones
@@ -147,6 +142,11 @@ const showNotification = (type, message) => {
     setTimeout(() => {
         notifications.value = notifications.value.filter(notification => notification.id !== id);
     }, 5000);
+};
+
+// Función para recargar la vista
+const reloadView = () => {
+    window.location.reload();
 };
 
 // Modal form functions
@@ -159,7 +159,7 @@ const loadTags = async () => {
         const response = await axios.get('/tags', { withCredentials: true });
         etiquetas.value = response.data;
     } catch (err) {
-        showNotification('error', err.response?.data?.message || 'Error desconocido al cargar las etiquetas');
+        showNotification('error', 'Error al cargar etiquetas.');
     }
 };
 
@@ -189,8 +189,7 @@ const handleSubcategoryUpdated = async () => {
     if (form.value.categoria) {
         const response = await axios.get(`/categories/${form.value.categoria}/subcategories`);
         subcategorias.value = response.data;
-    }
-};
+}};
 </script>
 
 <template>
