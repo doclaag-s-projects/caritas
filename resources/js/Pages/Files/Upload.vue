@@ -94,6 +94,7 @@ const validateAndUploadFile = async () => {
     } catch ( error ) {
         if ( error.response && error.response.status === 409 ) {
             showFileModal.value = true;
+            console.log(error.response.data.message)
             modalMessage.value = error.response.data.message;
         } else {
             showNotification( 'error', 'Error al subir el archivo' );
