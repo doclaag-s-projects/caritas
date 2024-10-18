@@ -73,31 +73,39 @@ class CategoryController extends Controller
         return response()->json($subcategoria);
     }
 
-   public function CrearCategoriaAjax(Request $request): JsonResponse
-   {
-       $validatedData = $request->validate([
-           'nombre_categoria' => 'required|string|max:255',
-           'descripcion_categoria' => 'nullable|string',
-       ]);
+    public function CrearCategoriaAjax(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'nombre_categoria' => 'required|string|max:255',
+            'descripcion_categoria' => 'nullable|string',
+        ]);
 
-       $validatedData['categoria_principal'] = 1;
-       $validatedData['categoria_padre'] = 0;
+        if ($this->ExisteCategoriaPorNombre($validatedData['nombre_categoria'])) {
+            return response()->json(['error' => 'La categoría ya existe'], 400);
+        }
 
-       $categoria = CategoryModel::create($validatedData);
+        $validatedData['categoria_principal'] = 1;
+        $validatedData['categoria_padre'] = 0;
 
-       return response()->json([
-           'message' => 'Categoría creada exitosamente.',
-           'categoria' => $categoria
-       ]);
-   }
+        $categoria = CategoryModel::create($validatedData);
 
-   public function CrearSubCategoriaAjax(Request $request): JsonResponse
+        return response()->json([
+            'message' => 'Categoría creada exitosamente.',
+            'categoria' => $categoria
+        ]);
+    }
+
+    public function CrearSubCategoriaAjax(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'nombre_categoria' => 'required|string|max:255',
             'descripcion_categoria' => 'nullable|string',
             'categoria_padre' => 'required|integer|exists:categorias,id',
         ]);
+
+        if ($this->ExisteCategoriaPorNombre($validatedData['nombre_categoria'])) {
+            return response()->json(['error' => 'La subcategoría ya existe'], 400);
+        }
 
         $validatedData['categoria_principal'] = 0;
 
@@ -115,35 +123,52 @@ class CategoryController extends Controller
         if (!$categoria) {
             return response()->json(['error' => 'Categoría no encontrada'], 404);
         }
-    
+
+        if ($this->ExisteCategoriaPorNombre($request->input('nombre_categoria'))) {
+            return response()->json(['error' => 'La categoría ya existe'], 400);
+        }
+
         $categoria->nombre_categoria = $request->input('nombre_categoria');
         $categoria->descripcion_categoria = $request->input('descripcion_categoria');
         $categoria->save();
-    
+
         return response()->json(['message' => 'Categoría actualizada correctamente']);
     }
-    
+
     public function updateSubcategoria(Request $request, $id)
     {
         $subcategoria = CategoryModel::find($id);
         if (!$subcategoria) {
             return response()->json(['error' => 'Subcategoría no encontrada'], 404);
         }
-    
+
+        if ($this->ExisteCategoriaPorNombre($request->input('nombre_categoria'))) {
+            return response()->json(['error' => 'La subcategoría ya existe'], 400);
+        }
+
         $subcategoria->nombre_categoria = $request->input('nombre_categoria');
         $subcategoria->descripcion_categoria = $request->input('descripcion_categoria');
         $subcategoria->categoria_padre = $request->input('categoria_padre');
         $subcategoria->save();
-    
+
         return response()->json(['message' => 'Subcategoría actualizada correctamente']);
     }
 
+
+    public function ExisteCategoriaPorNombre(string $nombreCategoria): bool
+    {
+        // Consultar la base de datos para verificar si existe una categoría con el nombre proporcionado
+        $existe = CategoryModel::where('nombre_categoria', $nombreCategoria)->exists();
+
+        // Retornar true si existe, false si no
+        return $existe;
+    }
 
     // Eliminar una categoría
     public function destroy($id)
     {
         $categoria = CategoryModel::findOrFail($id);
-    
+
         // Verificación 1: Validar que no tenga subcategorías
         if ($categoria->categoria_principal == 1) {
             $subcategorias = CategoryModel::where('categoria_padre', $id)->where('categoria_principal', 0)->exists();
@@ -151,17 +176,17 @@ class CategoryController extends Controller
                 return response()->json(['error' => 'La categoría principal tiene subcategorías asociadas y no puede ser eliminada.'], 400);
             }
         }
-    
+
         // Verificación 2: Validar que no tenga relación con archivos
         $archivoRelacion = DB::table('archivos_categorias')->where('categoria_id', $id)->first();
         if ($archivoRelacion) {
             $archivo = DB::table('archivos')->where('id', $archivoRelacion->archivo_id)->first();
             return response()->json(['error' => 'La categoría tiene relación con el archivo: ' . $archivo->nombre], 400);
         }
-    
+
         // Verificación 3: Eliminar la categoría
         $categoria->delete();
-    
+
         return response()->json(['message' => 'Categoría eliminada exitosamente.']);
     }
 }
