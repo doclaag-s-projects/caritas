@@ -13,6 +13,7 @@ use Inertia\Inertia;
 
 class FileController extends Controller
 {
+    // Subir archivo lógica. 
     public function upload(Request $request)
     {
         $categoriaPrincipalId = $request->input('categoria');
@@ -162,10 +163,10 @@ class FileController extends Controller
     // Listar Archivos
     public function list(Request $request)
     {
-        // Obtener archivos desde el modelo Archivo con paginación
         $files = File::paginate(10);
         $files->getCollection()->transform(function ($file) {
             return [
+                'id' => $file->id, // Asegúrate de incluir el campo 'id'
                 'name' => $file->nombre_archivo,
                 'url' => $file->ubicacion_archivo,
                 'estado' => $file->estado,
@@ -179,5 +180,53 @@ class FileController extends Controller
         return Inertia::render('Files/List', [
             'files' => $files,
         ]);
+    }
+    
+    // Eliminar archivo lógica.
+    public function delete(Request $request, $id)
+    {
+        $file = File::find($id);
+        if (!$file) {
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+        $file->update(['estado' => 1]);
+        FileTag::where('archivo_id', $id)->delete();
+        FileCategory::where('archivo_id', $id)->delete();
+
+        return response()->json(['message' => 'Archivo eliminado correctamente'], 200);
+    }
+    // Renombrar archivo lógica. 
+    public function rename(Request $request, $id)
+    {
+        $file = File::find($id);
+        if (!$file) {
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+
+        $newFileName = $request->input('newFileName');
+        if (!$newFileName) {
+            return response()->json(['error' => 'Nuevo nombre de archivo no proporcionado'], 400);
+        }
+
+        $cleanNewFileName = $this->validarNombre($newFileName);
+        $extension = pathinfo($file->nombre_archivo, PATHINFO_EXTENSION);
+        $newFileNameWithExtension = $cleanNewFileName . '.' . $extension;
+        $newFilePath = dirname($file->ubicacion_archivo) . '/' . $newFileNameWithExtension;
+        Storage::move($file->ubicacion_archivo, $newFilePath);
+        $file->update([
+            'nombre_archivo' => $newFileNameWithExtension,
+            'ubicacion_archivo' => Storage::url($newFilePath),
+        ]);
+        return response()->json(['message' => 'Archivo renombrado correctamente'], 200);
+    }
+    public function preview($id)
+    {
+        $file = File::find($id);
+        if (!$file) {
+            
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+
+        return response()->json(['url' => $file->ubicacion_archivo], 200);
     }
 }
