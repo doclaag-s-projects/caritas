@@ -7,6 +7,9 @@ use Inertia\Inertia;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\TagController;
 
+
+Route::get('/search', [FileController::class, 'searchByName'])->name('search');
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),

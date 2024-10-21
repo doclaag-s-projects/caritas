@@ -13,102 +13,100 @@ use Inertia\Inertia;
 
 class FileController extends Controller
 {
-public function upload(Request $request)
-{
-    $categoriaPrincipalId = $request->input('categoria');
-    $categoriaPrincipal = CategoryModel::find($categoriaPrincipalId);
-    if (!$categoriaPrincipal) {
-        return response()->json(['error' => 'Categoría no encontrada'], 400);
-    }
-    $categoriaPrincipalNombre = $categoriaPrincipal->nombre_categoria;
-    $destinationPath = 'public/CARITASPRUEBASDOCS/' . $categoriaPrincipalNombre;
+    public function upload(Request $request)
+    {
+        $categoriaPrincipalId = $request->input('categoria');
+        $categoriaPrincipal = CategoryModel::find($categoriaPrincipalId);
+        if (!$categoriaPrincipal) {
+            return response()->json(['error' => 'Categoría no encontrada'], 400);
+        }
+        $categoriaPrincipalNombre = $categoriaPrincipal->nombre_categoria;
+        $destinationPath = 'public/CARITASPRUEBASDOCS/' . $categoriaPrincipalNombre;
 
-    // Verificar si la carpeta existe, si no, crearla
-    if (!Storage::exists($destinationPath)) {
-        Storage::makeDirectory($destinationPath);
-    }
+        // Verificar si la carpeta existe, si no, crearla
+        if (!Storage::exists($destinationPath)) {
+            Storage::makeDirectory($destinationPath);
+        }
 
-    // Verificar si se seleccionó una subcategoría
-    $subcategoriaId = $request->input('subcategoria');
-    if ($subcategoriaId) {
-        $subcategoria = CategoryModel::find($subcategoriaId);
-        if ($subcategoria && $subcategoria->categoria_principal == 0) {
-            $subcategoriaNombre = $subcategoria->nombre_categoria;
-            $destinationPath .= '/' . $subcategoriaNombre;
+        // Verificar si se seleccionó una subcategoría
+        $subcategoriaId = $request->input('subcategoria');
+        if ($subcategoriaId) {
+            $subcategoria = CategoryModel::find($subcategoriaId);
+            if ($subcategoria && $subcategoria->categoria_principal == 0) {
+                $subcategoriaNombre = $subcategoria->nombre_categoria;
+                $destinationPath .= '/' . $subcategoriaNombre;
 
-            // Verificar si la subcarpeta existe, si no, crearla
-            if (!Storage::exists($destinationPath)) {
-                Storage::makeDirectory($destinationPath);
+                // Verificar si la subcarpeta existe, si no, crearla
+                if (!Storage::exists($destinationPath)) {
+                    Storage::makeDirectory($destinationPath);
+                }
             }
         }
-    }
 
-    $file = $request->file('file');
-    $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-    $extension = $file->getClientOriginalExtension();
-    $cleanName = $this->validarNombre($originalName);
-    $fileName = $cleanName . '.' . $extension;
-    $filePath = $destinationPath . '/' . $fileName;
+        $file = $request->file('file');
+        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $extension = $file->getClientOriginalExtension();
+        $cleanName = $this->validarNombre($originalName);
+        $fileName = $cleanName . '.' . $extension;
+        $filePath = $destinationPath . '/' . $fileName;
 
-    // Verificar si el archivo ya existe
-    if (Storage::exists($filePath)) {
-        if ($request->input('action') === 'replace') {
-            Storage::delete($filePath);
-        } elseif ($request->input('action') === 'rename') {
-            $fileName = $cleanName . '_' . time() . '.' . $extension;
-            $filePath = $destinationPath . '/' . $fileName;
-        } else {
-            return response()->json(['message' => 'El archivo ya existe', 'action' => 'exists'], 409);
+        // Verificar si el archivo ya existe
+        if (Storage::exists($filePath)) {
+            if ($request->input('action') === 'replace') {
+                Storage::delete($filePath);
+            } elseif ($request->input('action') === 'rename') {
+                $fileName = $cleanName . '_' . time() . '.' . $extension;
+                $filePath = $destinationPath . '/' . $fileName;
+            } else {
+                return response()->json(['message' => 'El archivo ya existe', 'action' => 'exists'], 409);
+            }
         }
-    }
 
-    // Guardar el archivo en la carpeta correspondiente
-    $file->storeAs($destinationPath, $fileName);
+        // Guardar el archivo en la carpeta correspondiente
+        $file->storeAs($destinationPath, $fileName);
 
-    $fileUrl = Storage::url($filePath);
+        $fileUrl = Storage::url($filePath);
 
-    // Verificar si el usuario está autenticado
-    if (Auth::check()) {
-        $userId = Auth::id();
-    } else {
-        return response()->json(['error' => 'No autenticado'], 401);
-    }
+        // Verificar si el usuario está autenticado
+        if (Auth::check()) {
+            $userId = Auth::id();
+        } else {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
 
-    // Crear el registro del archivo
-    $archivo = File::create([
-        'nombre_archivo' => $fileName,
-        'ubicacion_archivo' => $fileUrl,
-        'estado' => $request->input('estado', 0),
-        'publico' => $request->input('publico', 0),
-        'usuarios_id' => $userId,
-    ]);
-
-    // Crear la relación en la tabla archivos_etiquetas
-    $tags = explode(',', $request->input('tag'));
-    foreach ($tags as $tag) {
-        FileTag::create([
-            'archivo_id' => $archivo->id,
-            'etiqueta_id' => $tag,
-        ]);
-    }
-
-    // Crear la relación en la tabla archivos_categorias
-    if ($subcategoriaId) {
-        FileCategory::create([
-            'archivo_id' => $archivo->id,
-            'categoria_id' => $subcategoriaId,
+        // Crear el registro del archivo
+        $archivo = File::create([
+            'nombre_archivo' => $fileName,
+            'ubicacion_archivo' => $fileUrl,
+            'estado' => $request->input('estado', 0),
+            'publico' => $request->input('publico', 0),
             'usuarios_id' => $userId,
         ]);
-    } else {
+
+        // Crear la relación en la tabla archivos_etiquetas
+        $tags = explode(',', $request->input('tag'));
+        foreach ($tags as $tag) {
+            FileTag::create([
+                'archivo_id' => $archivo->id,
+                'etiqueta_id' => $tag,
+            ]);
+        }
+
+        // Crear la relación en la tabla archivos_categorias
         FileCategory::create([
             'archivo_id' => $archivo->id,
             'categoria_id' => $categoriaPrincipalId,
             'usuarios_id' => $userId,
         ]);
+        if ($subcategoriaId) {
+            FileCategory::create([
+                'archivo_id' => $archivo->id,
+                'categoria_id' => $subcategoriaId,
+                'usuarios_id' => $userId,
+            ]);
+        }
+        return response()->json(['message' => 'Archivo subido correctamente e insertado en la base de datos'], 200);
     }
-
-    return response()->json(['message' => 'Archivo subido correctamente e insertado en la base de datos'], 200);
-}
 
     // Función para validar archivo nombre y cambiarlo.
     private function validarNombre($fileName)
@@ -162,16 +160,70 @@ public function listPublicFiles(Request $request)
 }
 public function listCategoriesWithFiles()
 {
+    // Obtener las categorías principales y sus archivos públicos, sin incluir archivos de subcategorías
     $categoriasPrincipales = CategoryModel::where('categoria_principal', 1)
+        ->with(['subcategorias' => function ($query) {
+            $query->with(['files' => function ($query) {
+                $query->where('publico', 1); // Solo archivos públicos en las subcategorías
+            }]);
+        }, 'files' => function ($query) {
+            $query->where('publico', 1); // Solo archivos públicos en las categorías principales
+        }])
+        ->get();
+
+    // Obtener subcategorías y sus archivos públicos
+    $subcategorias = CategoryModel::where('categoria_principal', 0)
+        ->with(['files' => function ($query) {
+            $query->where('publico', 1); // Solo archivos públicos en las subcategorías
+        }])
+        ->get();
+
+    // Filtrar subcategorías que no tienen archivos públicos
+    $subcategorias = $subcategorias->filter(function ($subcategoria) {
+        return $subcategoria->files->isNotEmpty();
+    });
+
+    return response()->json([
+        'principales' => $categoriasPrincipales,
+        'subcategorias' => $subcategorias
+    ]);
+}
+public function searchByName(Request $request)
+{
+    // Validar que el parámetro de búsqueda no esté vacío
+    $request->validate([
+        'nombre' => 'required|string|min:1'
+    ]);
+
+    // Obtener el nombre o parte del nombre del archivo a buscar y convertirlo a minúsculas
+    $nombre = strtolower($request->input('nombre'));
+
+    // Buscar categorías cuyo nombre coincida exactamente, ignorando mayúsculas/minúsculas
+    $categorias = CategoryModel::whereRaw('LOWER(nombre_categoria) = ?', [$nombre])
+        ->orWhereRaw('LOWER(descripcion_categoria) = ?', [$nombre])
         ->with(['subcategorias.files' => function ($query) {
             $query->where('publico', 1);
-        }, 'files' => function ($query): void {
+        }, 'files' => function ($query) {
             $query->where('publico', 1);
         }])
         ->get();
 
+    // Buscar archivos por nombre exacto, ignorando mayúsculas/minúsculas
+    $archivos = File::whereRaw('LOWER(nombre_archivo) = ?', [$nombre])
+        ->where('publico', 1)
+        ->get();
+
+    // Buscar archivos por etiquetas con coincidencia exacta, ignorando mayúsculas/minúsculas
+    $archivosPorEtiquetas = FileTag::whereHas('etiqueta', function ($q) use ($nombre) {
+        $q->whereRaw('LOWER(nombre_etiqueta) = ?', [$nombre]);
+    })->with('archivo')->get()->pluck('archivo');
+
+    // Retornar los resultados en formato JSON
     return response()->json([
-        'principales' => $categoriasPrincipales,
+        'categorias' => $categorias,
+        'archivos' => $archivos,
+        'archivosPorEtiquetas' => $archivosPorEtiquetas,
     ]);
-    }
 }
+}
+
