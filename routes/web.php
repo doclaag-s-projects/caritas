@@ -43,6 +43,15 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/categories', [CategoryController::class, 'getCategorias'])->name('categories');
     Route::get('/categories/{categoriaPadreId}/subcategories', [CategoryController::class, 'getSubcategorias']);
+    Route::get('/categorias/recursivas', [CategoryController::class, 'obtenerCategoriasRecursivas']); 
+    Route::get('/categorias/principales', [CategoryController::class, 'getCategoriasPrincipales']);
+    Route::post('/categorias/crear', [CategoryController::class, 'CrearCategoriaAjax']);
+    Route::post('/subcategorias/crear', [CategoryController::class, 'CrearSubCategoriaAjax']);
+    Route::put('/categorias/{id}', [CategoryController::class, 'updateCategoria']);
+    Route::put('/subcategorias/{id}', [CategoryController::class, 'updateSubcategoria']);
+    Route::get('/categorias/{id}', [CategoryController::class, 'getCategoriaById']);
+    Route::get('/subcategorias/{id}', [CategoryController::class, 'getSubcategoriaById']);
+    Route::delete('/categorias/{id}', [CategoryController::class, 'destroy']);
     Route::get('/tags', [TagController::class, 'index']);
 });
 
