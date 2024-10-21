@@ -52,3 +52,12 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
     Route::put('/tags/{tag}/estado', [TagController::class, 'cambiarEstado']);
 });
+
+use App\Http\Controllers\UserController;
+
+Route::get('/users', [UserController::class, 'AllUsers'])->name('all.users');
+Route::get('/users/add', [UserController::class, 'AddUser'])->name('add.user');
+Route::get('/users/edit/{id}', [UserController::class, 'EditUser'])->name('edit.user');
+Route::put('/users/update/{id}', [UserController::class, 'UpdateUser'])->name('update.user');
+Route::delete('/users/delete/{id}', [UserController::class, 'DeleteUser'])->name('delete.user');
+Route::post('/users/store', [UserController::class, 'StoreUser'])->name('store.user');
