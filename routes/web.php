@@ -35,19 +35,19 @@ Route::get('/files/upload', function () {
 // Ruta para subir archivos
 Route::middleware(['auth'])->group(function () {
     Route::post('/files/upload', [FileController::class, 'upload']);
-    // Eliminar archivos con sus relaciones. 
+    // Eliminar archivos con sus relaciones.
     Route::delete('/files/{id}', [FileController::class, 'delete'])->name('files.delete');
     // Editar nombre de archivo lista
     Route::put('/files/{id}/rename', [FileController::class, 'rename'])->name('files.rename');
     // Previuw archivo lista
-    Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+    Route::get('/fileI Hey Cortana, s/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
 });
 
 // Ruta para obtener las categorías.
 Route::middleware(['auth'])->group(function () {
     Route::get('/categories', [CategoryController::class, 'getCategorias'])->name('categories');
     Route::get('/categories/{categoriaPadreId}/subcategories', [CategoryController::class, 'getSubcategorias']);
-    Route::get('/categorias/recursivas', [CategoryController::class, 'obtenerCategoriasRecursivas']); 
+    Route::get('/categorias/recursivas', [CategoryController::class, 'obtenerCategoriasRecursivas']);
     Route::get('/categorias/principales', [CategoryController::class, 'getCategoriasPrincipales']);
     Route::post('/categorias/crear', [CategoryController::class, 'CrearCategoriaAjax']);
     Route::post('/subcategorias/crear', [CategoryController::class, 'CrearSubCategoriaAjax']);

@@ -5,6 +5,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import NavLinkFiles from '@/Components/NavLinkFiles.vue';
+import EditModal from '@/Components/EditModal.vue';
+import DeleteModal from '@/Components/DeleteModal.vue';
 import { SearchIcon, ChevronLeftIcon, ChevronRightIcon, FolderIcon, FileTextIcon, EyeIcon } from 'lucide-vue-next';
 
 const files = ref([]);
@@ -38,7 +40,7 @@ const fetchFiles = async (page = 1) => {
 };
 
 const fetchPreviewUrl = async (fileId) => {
-    console.log("File ID:", fileId); 
+    console.log("File ID:", fileId);
     try {
         const response = await axios.get(`/files/${fileId}/preview`, {
             headers: {
@@ -94,6 +96,14 @@ const formatFileUrl = (url) => {
         isLast: index === formattedUrl.split('/').length - 1
     }));
 };
+
+const handleUpdate = () => {
+    fetchFiles(currentPage.value);
+};
+
+const handleDelete = () => {
+    fetchFiles(currentPage.value);
+};
 </script>
 
 <template>
@@ -133,7 +143,7 @@ const formatFileUrl = (url) => {
                     <div v-else class="space-y-6">
                         <transition-group name="list" tag="ul">
                             <li v-for="file in filteredFiles" :key="file.id"
-                                class="bg-white shadow-md rounded-lg overflow-hidden transition duration-300 ease-in-out transform hover:scale-102 hover:shadow-lg mt-2">
+                                class="relative bg-white shadow-md rounded-lg overflow-hidden transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg mt-2">
                                 <div class="p-6">
                                     <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ file.name }}</h3>
                                     <p class="text-sm text-gray-600 flex items-center flex-wrap">
@@ -142,11 +152,15 @@ const formatFileUrl = (url) => {
                                                 class="inline-block w-4 h-4 mx-1 text-gray-400" />
                                             <FileTextIcon v-if="part.isLast"
                                                 class="inline-block w-4 h-4 mx-1 text-gray-400" />
-                                            <span class="mx-1">{{ part.text }}</span>
+                                            <span class="mx-1"> {{ part.text }} </span>
                                         </template>
                                     </p>
+                                    <div class="absolute top-2 right-2 flex space-x-2 items-center">
+                                        <EditModal :id="file.id" :name="file.name" @update="handleUpdate" />
+                                        <DeleteModal :id="file.id" :name="file.name" @delete="handleDelete" />
+                                    </div>
                                     <button @click="fetchPreviewUrl(file.id)"
-                                        class="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        class="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                         <EyeIcon class="h-5 w-5 mr-2" />
                                         Ver PDF
                                     </button>
