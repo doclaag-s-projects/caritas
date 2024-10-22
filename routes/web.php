@@ -29,18 +29,11 @@ Route::middleware([
 // Ruta para subir archivos
 Route::middleware(['auth'])->group(function () {
     Route::post('/files/upload', [FileController::class, 'upload']);
-    // Eliminar archivos con sus relaciones.
     Route::delete('/files/{id}', [FileController::class, 'delete'])->name('files.delete');
-    // Editar nombre de archivo lista
     Route::put('/files/{id}/rename', [FileController::class, 'rename'])->name('files.rename');
-    // Previuw archivo lista
     Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
-    // Listar archivos
     Route::get('/files/list', [FileController::class, 'list'])->name('list');
-    // Subir archivo
-    Route::get('/files/upload', function () {
-        return Inertia::render('Files/Upload');
-    })->name('files');
+    Route::get('/files/upload', function () {return Inertia::render('Files/Upload');})->name('files');
 });
 
 // Rutas para obtener las categorías.

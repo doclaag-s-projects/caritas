@@ -163,10 +163,13 @@ class FileController extends Controller
     // Listar Archivos
     public function list(Request $request)
     {
-        $files = File::orderBy('created_at', 'desc')->paginate(10);
+        $files = File::where('estado', '!=', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10);
+
         $files->getCollection()->transform(function ($file) {
             return [
-                'id' => $file->id, // Asegúrate de incluir el campo 'id'
+                'id' => $file->id,
                 'name' => $file->nombre_archivo,
                 'url' => $file->ubicacion_archivo,
                 'estado' => $file->estado,
@@ -181,7 +184,7 @@ class FileController extends Controller
             'files' => $files,
         ]);
     }
-    
+
     // Eliminar archivo lógica.
     public function delete(Request $request, $id)
     {
