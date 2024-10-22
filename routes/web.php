@@ -28,21 +28,29 @@ Route::middleware([
     })->name('dashboard');
 });
 
-// RUTA ARCHIVOS
-Route::get('/files/list', [FileController::class, 'list'])->name('list');
-Route::get('/files/upload', function () {
-    return Inertia::render('Files/Upload');
-})->name('files');
-
 // Ruta para subir archivos
 Route::middleware(['auth'])->group(function () {
     Route::post('/files/upload', [FileController::class, 'upload']);
+    Route::delete('/files/{id}', [FileController::class, 'delete'])->name('files.delete');
+    Route::put('/files/{id}/rename', [FileController::class, 'rename'])->name('files.rename');
+    Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+    Route::get('/files/list', [FileController::class, 'list'])->name('list');
+    Route::get('/files/upload', function () {return Inertia::render('Files/Upload');})->name('files');
 });
 
-// Ruta para obtener las categorías.
+// Rutas para obtener las categorías.
 Route::middleware(['auth'])->group(function () {
     Route::get('/categories', [CategoryController::class, 'getCategorias'])->name('categories');
     Route::get('/categories/{categoriaPadreId}/subcategories', [CategoryController::class, 'getSubcategorias']);
+    Route::get('/categorias/recursivas', [CategoryController::class, 'obtenerCategoriasRecursivas']);
+    Route::get('/categorias/principales', [CategoryController::class, 'getCategoriasPrincipales']);
+    Route::post('/categorias/crear', [CategoryController::class, 'CrearCategoriaAjax']);
+    Route::post('/subcategorias/crear', [CategoryController::class, 'CrearSubCategoriaAjax']);
+    Route::put('/categorias/{id}', [CategoryController::class, 'updateCategoria']);
+    Route::put('/subcategorias/{id}', [CategoryController::class, 'updateSubcategoria']);
+    Route::get('/categorias/{id}', [CategoryController::class, 'getCategoriaById']);
+    Route::get('/subcategorias/{id}', [CategoryController::class, 'getSubcategoriaById']);
+    Route::delete('/categorias/{id}', [CategoryController::class, 'destroy']);
     Route::get('/tags', [TagController::class, 'index']);
 });
 
