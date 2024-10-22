@@ -24,11 +24,9 @@ class PermissionController extends Controller
             'nombre' => 'required|string|max:255',
         ]);
 
-        $permission = new Permission();
-        $permission->nombre = $request->nombre;
-        $permission->save();
+        $permission = Permission::create($request->only('nombre'));
 
-        return redirect()->route('permissions.index');
+        return response()->json($permission, 201);
     }
 
     public function show($id)
@@ -44,10 +42,9 @@ class PermissionController extends Controller
         ]);
 
         $permission = Permission::findOrFail($id);
-        $permission->nombre = $request->nombre;
-        $permission->save();
+        $permission->update($request->only('nombre'));
 
-        return redirect()->route('permissions.index');
+        return response()->json($permission);
     }
 
     public function destroy($id)
@@ -55,6 +52,6 @@ class PermissionController extends Controller
         $permission = Permission::findOrFail($id);
         $permission->delete();
 
-        return redirect()->route('permissions.index');
+        return response()->json(['id' => $id], 200);
     }
 }

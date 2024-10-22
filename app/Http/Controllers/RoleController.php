@@ -9,7 +9,7 @@ class RoleController extends Controller
 {
     public function index()
     {
-        return Role::all();
+        return response()->json(Role::all());
     }
 
     public function create()
@@ -23,14 +23,14 @@ class RoleController extends Controller
             'nombre' => 'required|string|max:255',
         ]);
 
-        Role::create($request->only('nombre'));
+        $role = Role::create($request->only('nombre'));
 
-        return redirect()->route('roles.index')->with('success', 'Role created successfully.');
+        return response()->json($role, 201);
     }
 
     public function show(Role $role)
     {
-        return view('roles.show', compact('role'));
+        return response()->json($role);
     }
 
     public function update(Request $request, Role $role)
@@ -41,13 +41,13 @@ class RoleController extends Controller
 
         $role->update($request->only('nombre'));
 
-        return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
+        return response()->json($role);
     }
 
     public function destroy(Role $role)
     {
         $role->update(['estado' => 1]);
 
-        return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
+        return response()->json(['id' => $role->id], 200);
     }
 }
