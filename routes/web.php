@@ -26,12 +26,6 @@ Route::middleware([
     })->name('dashboard');
 });
 
-// RUTA ARCHIVOS
-Route::get('/files/list', [FileController::class, 'list'])->name('list');
-Route::get('/files/upload', function () {
-    return Inertia::render('Files/Upload');
-})->name('files');
-
 // Ruta para subir archivos
 Route::middleware(['auth'])->group(function () {
     Route::post('/files/upload', [FileController::class, 'upload']);
@@ -40,10 +34,16 @@ Route::middleware(['auth'])->group(function () {
     // Editar nombre de archivo lista
     Route::put('/files/{id}/rename', [FileController::class, 'rename'])->name('files.rename');
     // Previuw archivo lista
-    Route::get('/fileI Hey Cortana, s/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+    Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+    // Listar archivos
+    Route::get('/files/list', [FileController::class, 'list'])->name('list');
+    // Subir archivo
+    Route::get('/files/upload', function () {
+        return Inertia::render('Files/Upload');
+    })->name('files');
 });
 
-// Ruta para obtener las categorías.
+// Rutas para obtener las categorías.
 Route::middleware(['auth'])->group(function () {
     Route::get('/categories', [CategoryController::class, 'getCategorias'])->name('categories');
     Route::get('/categories/{categoriaPadreId}/subcategories', [CategoryController::class, 'getSubcategorias']);
