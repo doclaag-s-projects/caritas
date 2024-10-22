@@ -13,7 +13,7 @@ use Inertia\Inertia;
 
 class FileController extends Controller
 {
-    // Subir archivo lógica. 
+    // Subir archivo lógica.
     public function upload(Request $request)
     {
         $categoriaPrincipalId = $request->input('categoria');
@@ -53,8 +53,8 @@ class FileController extends Controller
 
         // Verificar si el archivo ya existe
         $existingFile = File::where('nombre_archivo', $fileName)
-                            ->where('ubicacion_archivo', Storage::url($filePath))
-                            ->first();
+            ->where('ubicacion_archivo', Storage::url($filePath))
+            ->first();
 
         if ($existingFile) {
             if ($request->input('action') === 'replace') {
@@ -131,16 +131,16 @@ class FileController extends Controller
             }
         }
 
-        // Crear la relación en la tabla archivos_categorias
-        FileCategory::create([
-            'archivo_id' => $archivo->id,
-            'categoria_id' => $categoriaPrincipalId,
-            'usuarios_id' => $userId,
-        ]);
         if ($subcategoriaId) {
             FileCategory::create([
                 'archivo_id' => $archivo->id,
                 'categoria_id' => $subcategoriaId,
+                'usuarios_id' => $userId,
+            ]);
+        } else {
+            FileCategory::create([
+                'archivo_id' => $archivo->id,
+                'categoria_id' => $categoriaPrincipalId,
                 'usuarios_id' => $userId,
             ]);
         }
@@ -181,7 +181,7 @@ class FileController extends Controller
             'files' => $files,
         ]);
     }
-    
+
     // Eliminar archivo lógica.
     public function delete(Request $request, $id)
     {
@@ -195,7 +195,7 @@ class FileController extends Controller
 
         return response()->json(['message' => 'Archivo eliminado correctamente'], 200);
     }
-    // Renombrar archivo lógica. 
+    // Renombrar archivo lógica.
     public function rename(Request $request, $id)
     {
         $file = File::find($id);
@@ -223,10 +223,93 @@ class FileController extends Controller
     {
         $file = File::find($id);
         if (!$file) {
-            
+
             return response()->json(['error' => 'Archivo no encontrado'], 404);
         }
 
         return response()->json(['url' => $file->ubicacion_archivo], 200);
+    }
+    public function listPublicFiles(Request $request)
+    {
+        $files = File::where('publico', 1)->paginate(10);
+        $files->getCollection()->transform(function ($file) {
+            return [
+                'name' => $file->nombre_archivo,
+                'url' => $file->ubicacion_archivo,
+            ];
+        });
+        if ($request->wantsJson()) {
+            return response()->json($files, 200);
+        }
+        return Inertia::render('Files/List', [
+            'files' => $files,
+        ]);
+    }
+    public function listCategoriesWithFiles()
+    {
+        // Obtener las categorías principales y sus archivos públicos, sin incluir archivos de subcategorías
+        $categoriasPrincipales = CategoryModel::where('categoria_principal', 1)
+            ->with(['subcategorias' => function ($query) {
+                $query->with(['files' => function ($query) {
+                    $query->where('publico', 1); // Solo archivos públicos en las subcategorías
+                }]);
+            }, 'files' => function ($query) {
+                $query->where('publico', 1); // Solo archivos públicos en las categorías principales
+            }])
+            ->get();
+
+        // Obtener subcategorías y sus archivos públicos
+        $subcategorias = CategoryModel::where('categoria_principal', 0)
+            ->with(['files' => function ($query) {
+                $query->where('publico', 1); // Solo archivos públicos en las subcategorías
+            }])
+            ->get();
+
+        // Filtrar subcategorías que no tienen archivos públicos
+        $subcategorias = $subcategorias->filter(function ($subcategoria) {
+            return $subcategoria->files->isNotEmpty();
+        });
+
+        return response()->json([
+            'principales' => $categoriasPrincipales,
+            'subcategorias' => $subcategorias
+        ]);
+    }
+    public function searchByName(Request $request)
+    {
+        // Validar que el parámetro de búsqueda no esté vacío
+        $request->validate([
+            'nombre' => 'required|string|min:1'
+        ]);
+
+        // Obtener el nombre o parte del nombre del archivo a buscar y convertirlo a minúsculas
+        $nombre = strtolower($request->input('nombre'));
+
+        // Buscar categorías cuyo nombre coincida exactamente, ignorando mayúsculas/minúsculas
+        $categorias = CategoryModel::whereRaw('LOWER(nombre_categoria) = ?', [$nombre])
+            ->orWhereRaw('LOWER(descripcion_categoria) = ?', [$nombre])
+            ->with(['subcategorias.files' => function ($query) {
+                $query->where('publico', 1);
+            }, 'files' => function ($query) {
+                $query->where('publico', 1);
+            }])
+            ->get();
+
+        // Buscar archivos por nombre exacto, ignorando mayúsculas/minúsculas
+        $archivos = File::whereRaw('LOWER(nombre_archivo) = ?', [$nombre])
+            ->where('publico', 1)
+            ->get();
+
+        // Buscar archivos por etiquetas con coincidencia exacta, ignorando mayúsculas/minúsculas
+        $archivosPorEtiquetas = FileTag::whereHas('etiqueta', function ($q) use ($nombre) {
+            $q->whereRaw('LOWER(nombre_etiqueta) = ?', [$nombre]);
+        })->with('archivo')->get()->pluck('archivo');
+
+        // Retornar los resultados en formato JSON
+        return response()->json([
+            'categorias' => $categorias,
+            'archivos' => $archivos,
+            'archivosPorEtiquetas' => $archivosPorEtiquetas,
+        ]);
     }
 }
