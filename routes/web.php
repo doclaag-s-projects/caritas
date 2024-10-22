@@ -15,7 +15,8 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
-
+Route::get('/public-files', [FileController::class, 'listPublicFiles'])->name('public.files');
+Route::get('/categories-with-files', [FileController::class, 'listCategoriesWithFiles'])->name('categories.with.files');
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
