@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import axios from 'axios';
 
@@ -14,18 +14,21 @@ const emit = defineEmits( [ 'update:show', 'subcategoria-updated' ] );
 const nombreSubcategoria = ref( '' );
 const descripcionSubcategoria = ref( '' );
 const subcategoriaFormError = ref( '' );
+const categoriasPrincipales = ref( [] );
+const categoriaPrincipal = ref( '' );
 
 watch( () => props.selectedSubcategoria, ( newVal ) => {
     if ( newVal ) {
         nombreSubcategoria.value = newVal.nombre_categoria;
         descripcionSubcategoria.value = newVal.descripcion_categoria;
+        categoriaPrincipal.value = newVal.categoria_id;
     } else {
         clearForm();
     }
 } );
 
 const submitForm = async () => {
-    if ( !nombreSubcategoria.value || !descripcionSubcategoria.value ) {
+    if ( !nombreSubcategoria.value || !descripcionSubcategoria.value || !categoriaPrincipal.value ) {
         subcategoriaFormError.value = 'Todos los campos son obligatorios.';
         return;
     }
@@ -36,20 +39,22 @@ const submitForm = async () => {
             await axios.put( `/subcategories/${ props.selectedSubcategoria.id }`, {
                 nombre_categoria: nombreSubcategoria.value,
                 descripcion_categoria: descripcionSubcategoria.value,
-                categoria_id: props.categoriaId,
+                categoria_id: categoriaPrincipal.value,
             } );
         } else {
             // Create new subcategory logic
-            await axios.post( '/subcategories', {
+            const response = await axios.post( '/subcategorias/crear', {
                 nombre_categoria: nombreSubcategoria.value,
                 descripcion_categoria: descripcionSubcategoria.value,
-                categoria_id: props.categoriaId,
+                categoria_padre: categoriaPrincipal.value,
             } );
+            console.log( response.data );
         }
 
         emit( 'subcategoria-updated' );
         closeModal();
     } catch ( error ) {
+        console.error( 'Error al guardar la subcategoría:', error );
         subcategoriaFormError.value = 'Error al guardar la subcategoría. Inténtalo de nuevo.';
     }
 };
@@ -58,12 +63,30 @@ const clearForm = () => {
     nombreSubcategoria.value = '';
     descripcionSubcategoria.value = '';
     subcategoriaFormError.value = '';
+    categoriaPrincipal.value = '';
 };
 
 const closeModal = () => {
     emit( 'update:show', false );
     clearForm();
 };
+
+const handleCategoryUpdated = async () => {
+    await loadCategoriasPrincipales();
+};
+
+const loadCategoriasPrincipales = async () => {
+    try {
+        const response = await axios.get( '/categories' );
+        categoriasPrincipales.value = response.data.principales;
+    } catch ( error ) {
+        console.error( 'Error al cargar las categorías principales:', error );
+    }
+};
+
+onMounted( async () => {
+    await loadCategoriasPrincipales();
+} );
 </script>
 
 <template>
@@ -80,6 +103,16 @@ const closeModal = () => {
                     <label for="descripcion_subcategoria" class="block text-gray-700">Descripción</label>
                     <textarea id="descripcion_subcategoria" v-model=" descripcionSubcategoria "
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="categoria" class="block text-gray-700">Categoría Principal</label>
+                    <select id="categoria" v-model=" categoriaPrincipal "
+                        class="block w-full bg-white border border-gray-300 text-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Seleccione una categoría</option>
+                        <option v-for=" categoria in categoriasPrincipales " :key=" categoria.id " :value=" categoria.id ">
+                            {{ categoria.nombre_categoria }}
+                        </option>
+                    </select>
                 </div>
                 <div v-if=" subcategoriaFormError " class="text-red-500 text-center mb-4">
                     {{ subcategoriaFormError }}

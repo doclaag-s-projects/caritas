@@ -13,6 +13,7 @@ const emit = defineEmits( [ 'update:show', 'categoria-updated' ] );
 const nombreCategoria = ref( '' );
 const descripcionCategoria = ref( '' );
 const categoriaFormError = ref( '' );
+const categorias = ref( [] );
 
 watch( () => props.selectedCategoria, ( newVal ) => {
     if ( newVal ) {
@@ -38,15 +39,19 @@ const submitForm = async () => {
             } );
         } else {
             // Create new category logic
-            await axios.post( '/categories', {
+            const response = await axios.post( '/categorias/crear', {
                 nombre_categoria: nombreCategoria.value,
                 descripcion_categoria: descripcionCategoria.value,
             } );
+            console.log( response.data );
+            categorias.value.push( response.data.categoria );
         }
 
         emit( 'categoria-updated' );
         closeModal();
+        obtenerCategoriasRecursivas(); // Actualizar la lista de categorías
     } catch ( error ) {
+        console.error( 'Error al guardar la categoría:', error );
         categoriaFormError.value = 'Error al guardar la categoría. Inténtalo de nuevo.';
     }
 };
@@ -60,6 +65,15 @@ const clearForm = () => {
 const closeModal = () => {
     emit( 'update:show', false );
     clearForm();
+};
+
+const obtenerCategoriasRecursivas = async () => {
+    try {
+        const response = await axios.get( '/categorias' );
+        categorias.value = response.data;
+    } catch ( error ) {
+        console.error( 'Error al obtener las categorías:', error );
+    }
 };
 </script>
 
