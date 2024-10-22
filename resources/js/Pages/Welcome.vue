@@ -41,11 +41,18 @@ const searchFiles = () => {
     if (!searchQuery.value) {
         searchResult.value = principales.value;
     } else {
-        searchResult.value = principales.value.filter(category =>
-            category.files.some(file =>
-                file.nombre_archivo.toLowerCase().includes(searchQuery.value.toLowerCase())
-            )
-        );
+        const filteredCategories = principales.value.map((category) => {
+            const subcategories = category.subcategorias.map((subcategory) => {
+                const filteredFiles = subcategory.files.filter((file) =>
+                    file.nombre_archivo.toLowerCase().includes(searchQuery.value.toLowerCase())
+                );
+                return { ...subcategory, files: filteredFiles, expanded: filteredFiles.length > 0 };
+            }).filter(sub => sub.files.length > 0);
+
+            return { ...category, subcategorias: subcategories, expanded: subcategories.length > 0 };
+        }).filter(cat => cat.subcategorias.length > 0);
+
+        searchResult.value = filteredCategories;
     }
 };
 </script>
@@ -64,7 +71,6 @@ const searchFiles = () => {
         <div class="main-content">
             <aside class="sidebar">
                 <h2>Documentos públicos</h2>
-
                 <div v-for="(category, categoryIndex) in searchResult" :key="categoryIndex" class="area">
                     <button @click="toggleCategory(category)" class="area-toggle">
                         <span class="area-icon">{{ category.icon }}</span>
@@ -91,7 +97,8 @@ const searchFiles = () => {
 
             <main>
                 <div class="search-bar">
-                    <input type="text" v-model="searchQuery" placeholder="Buscar archivos" class="search-input">
+                    <input type="text" v-model="searchQuery" placeholder="Buscar archivos por nombre"
+                        class="search-input" />
                     <button @click="searchFiles" class="search-button">Buscar</button>
                 </div>
 
