@@ -179,9 +179,9 @@ const flattenedFiles = computed( () => {
                 <div class="max-w-4xl mx-auto">
                     <div class="relative max-w-xl mx-auto mb-8">
                         <div
-                            class="flex bg-white rounded-full shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+                            class="flex  bg-white rounded-full shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
                             <input type="text" v-model=" searchQuery " placeholder="Buscar archivos por nombre"
-                                class="flex-1 pl-12 pr-4 py-4 text-gray-700 placeholder-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50" />
+                                class="flex-1 pl-12 pr-4 py-4 text-gray-700 border-transparent placeholder-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50" />
                             <button @click=" searchFiles "
                                 class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
                                 <Search class="w-5 h-5" />
@@ -193,7 +193,7 @@ const flattenedFiles = computed( () => {
                     </div>
 
                     <div v-if=" loading " class="text-center py-10">
-                        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto">
+                        <div class="animate-spin rounded-full h-16 w-16  border-t-4 border-b-4 border-blue-500 mx-auto">
                         </div>
                         <p class="mt-6 text-lg text-gray-600 font-medium">Cargando documentos...</p>
                     </div>
