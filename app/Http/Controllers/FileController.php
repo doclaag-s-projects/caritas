@@ -163,10 +163,13 @@ class FileController extends Controller
     // Listar Archivos
     public function list(Request $request)
     {
-        $files = File::paginate(10);
+        $files = File::where('estado', '!=', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10);
+
         $files->getCollection()->transform(function ($file) {
             return [
-                'id' => $file->id, // Asegúrate de incluir el campo 'id'
+                'id' => $file->id,
                 'name' => $file->nombre_archivo,
                 'url' => $file->ubicacion_archivo,
                 'estado' => $file->estado,
@@ -208,17 +211,31 @@ class FileController extends Controller
             return response()->json(['error' => 'Nuevo nombre de archivo no proporcionado'], 400);
         }
 
-        $cleanNewFileName = $this->validarNombre($newFileName);
+        $cleanNewFileName = $this->validarNombre(pathinfo($newFileName, PATHINFO_FILENAME));
         $extension = pathinfo($file->nombre_archivo, PATHINFO_EXTENSION);
         $newFileNameWithExtension = $cleanNewFileName . '.' . $extension;
-        $newFilePath = dirname($file->ubicacion_archivo) . '/' . $newFileNameWithExtension;
-        Storage::move($file->ubicacion_archivo, $newFilePath);
+
+        // Obtener la ruta actual del archivo
+        $currentFilePath = str_replace('/storage', 'public', $file->ubicacion_archivo);
+        $newFilePath = dirname($currentFilePath) . '/' . $newFileNameWithExtension;
+
+        // Mover el archivo a la nueva ubicación
+        if (Storage::exists($currentFilePath)) {
+            Storage::move($currentFilePath, $newFilePath);
+        } else {
+            return response()->json(['error' => 'Archivo físico no encontrado'], 404);
+        }
+
+        // Actualizar la ruta del archivo en la base de datos
+        $fileUrl = Storage::url($newFilePath);
         $file->update([
             'nombre_archivo' => $newFileNameWithExtension,
-            'ubicacion_archivo' => Storage::url($newFilePath),
+            'ubicacion_archivo' => $fileUrl,
         ]);
+
         return response()->json(['message' => 'Archivo renombrado correctamente'], 200);
     }
+    // Vista de archivos PDF función. 
     public function preview($id)
     {
         $file = File::find($id);

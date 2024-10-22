@@ -223,7 +223,6 @@ export default {
             try {
                 const response = await axios.get('/categorias/recursivas');
                 this.categorias = response.data;
-                console.log(this.categorias);
             } catch (error) {
                 console.error('Error al obtener las categorías recursivas:', error);
             }
