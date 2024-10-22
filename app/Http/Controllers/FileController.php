@@ -13,6 +13,7 @@ use Inertia\Inertia;
 
 class FileController extends Controller
 {
+    // Subir archivo lógica. 
     public function upload(Request $request)
     {
         $categoriaPrincipalId = $request->input('categoria');
@@ -51,12 +52,48 @@ class FileController extends Controller
         $filePath = $destinationPath . '/' . $fileName;
 
         // Verificar si el archivo ya existe
-        if (Storage::exists($filePath)) {
+        $existingFile = File::where('nombre_archivo', $fileName)
+                            ->where('ubicacion_archivo', Storage::url($filePath))
+                            ->first();
+
+        if ($existingFile) {
             if ($request->input('action') === 'replace') {
                 Storage::delete($filePath);
+                $file->storeAs($destinationPath, $fileName);
+                $fileUrl = Storage::url($filePath);
+
+                // Actualizar el registro del archivo existente
+                $existingFile->update([
+                    'ubicacion_archivo' => $fileUrl,
+                    'estado' => $request->input('estado', 0),
+                    'publico' => $request->input('publico', 0),
+                ]);
+
+                // Actualizar las etiquetas del archivo existente
+                FileTag::where('archivo_id', $existingFile->id)->delete();
+                $tags = $request->input('tag');
+                if ($tags) {
+                    $tagsArray = explode(',', $tags);
+                    foreach ($tagsArray as $tag) {
+                        FileTag::create([
+                            'archivo_id' => $existingFile->id,
+                            'etiqueta_id' => $tag,
+                        ]);
+                    }
+                }
+
+                return response()->json(['message' => 'Archivo reemplazado correctamente y registro actualizado'], 200);
             } elseif ($request->input('action') === 'rename') {
-                $fileName = $cleanName . '_' . time() . '.' . $extension;
-                $filePath = $destinationPath . '/' . $fileName;
+                // Obtener el nuevo nombre del archivo desde la solicitud
+                $newFileName = $request->input('newFileName');
+                if ($newFileName) {
+                    $cleanNewFileName = $this->validarNombre($newFileName);
+                    $fileName = $cleanNewFileName . '.' . $extension;
+                    $filePath = $destinationPath . '/' . $fileName;
+                } else {
+                    $fileName = $cleanName . '_' . time() . '.' . $extension;
+                    $filePath = $destinationPath . '/' . $fileName;
+                }
             } else {
                 return response()->json(['message' => 'El archivo ya existe', 'action' => 'exists'], 409);
             }
@@ -64,7 +101,6 @@ class FileController extends Controller
 
         // Guardar el archivo en la carpeta correspondiente
         $file->storeAs($destinationPath, $fileName);
-
         $fileUrl = Storage::url($filePath);
 
         // Verificar si el usuario está autenticado
@@ -83,13 +119,16 @@ class FileController extends Controller
             'usuarios_id' => $userId,
         ]);
 
-        // Crear la relación en la tabla archivos_etiquetas
-        $tags = explode(',', $request->input('tag'));
-        foreach ($tags as $tag) {
-            FileTag::create([
-                'archivo_id' => $archivo->id,
-                'etiqueta_id' => $tag,
-            ]);
+        // Crear la relación en la tabla archivos_etiquetas si hay etiquetas
+        $tags = $request->input('tag');
+        if ($tags) {
+            $tagsArray = explode(',', $tags);
+            foreach ($tagsArray as $tag) {
+                FileTag::create([
+                    'archivo_id' => $archivo->id,
+                    'etiqueta_id' => $tag,
+                ]);
+            }
         }
 
         // Crear la relación en la tabla archivos_categorias
@@ -124,10 +163,13 @@ class FileController extends Controller
     // Listar Archivos
     public function list(Request $request)
     {
-        // Obtener archivos desde el modelo Archivo con paginación
-        $files = File::paginate(10);
+        $files = File::where('estado', '!=', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10);
+
         $files->getCollection()->transform(function ($file) {
             return [
+                'id' => $file->id,
                 'name' => $file->nombre_archivo,
                 'url' => $file->ubicacion_archivo,
                 'estado' => $file->estado,
@@ -141,5 +183,67 @@ class FileController extends Controller
         return Inertia::render('Files/List', [
             'files' => $files,
         ]);
+    }
+
+    // Eliminar archivo lógica.
+    public function delete(Request $request, $id)
+    {
+        $file = File::find($id);
+        if (!$file) {
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+        $file->update(['estado' => 1]);
+        FileTag::where('archivo_id', $id)->delete();
+        FileCategory::where('archivo_id', $id)->delete();
+
+        return response()->json(['message' => 'Archivo eliminado correctamente'], 200);
+    }
+    // Renombrar archivo lógica. 
+    public function rename(Request $request, $id)
+    {
+        $file = File::find($id);
+        if (!$file) {
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+
+        $newFileName = $request->input('newFileName');
+        if (!$newFileName) {
+            return response()->json(['error' => 'Nuevo nombre de archivo no proporcionado'], 400);
+        }
+
+        $cleanNewFileName = $this->validarNombre(pathinfo($newFileName, PATHINFO_FILENAME));
+        $extension = pathinfo($file->nombre_archivo, PATHINFO_EXTENSION);
+        $newFileNameWithExtension = $cleanNewFileName . '.' . $extension;
+
+        // Obtener la ruta actual del archivo
+        $currentFilePath = str_replace('/storage', 'public', $file->ubicacion_archivo);
+        $newFilePath = dirname($currentFilePath) . '/' . $newFileNameWithExtension;
+
+        // Mover el archivo a la nueva ubicación
+        if (Storage::exists($currentFilePath)) {
+            Storage::move($currentFilePath, $newFilePath);
+        } else {
+            return response()->json(['error' => 'Archivo físico no encontrado'], 404);
+        }
+
+        // Actualizar la ruta del archivo en la base de datos
+        $fileUrl = Storage::url($newFilePath);
+        $file->update([
+            'nombre_archivo' => $newFileNameWithExtension,
+            'ubicacion_archivo' => $fileUrl,
+        ]);
+
+        return response()->json(['message' => 'Archivo renombrado correctamente'], 200);
+    }
+    // Vista de archivos PDF función. 
+    public function preview($id)
+    {
+        $file = File::find($id);
+        if (!$file) {
+            
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+
+        return response()->json(['url' => $file->ubicacion_archivo], 200);
     }
 }
