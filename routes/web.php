@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -53,11 +55,32 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/tags/{tag}/estado', [TagController::class, 'cambiarEstado']);
 });
 
-use App\Http\Controllers\UserController;
 
-Route::get('/users', [UserController::class, 'AllUsers'])->name('all.users');
-Route::get('/users/add', [UserController::class, 'AddUser'])->name('add.user');
-Route::get('/users/edit/{id}', [UserController::class, 'EditUser'])->name('edit.user');
-Route::put('/users/update/{id}', [UserController::class, 'UpdateUser'])->name('update.user');
-Route::delete('/users/delete/{id}', [UserController::class, 'DeleteUser'])->name('delete.user');
-Route::post('/users/store', [UserController::class, 'StoreUser'])->name('store.user');
+// Listar todos los usuarios
+Route::get('/', [UserController::class, 'AllUsers'])->name('all.users');
+
+// Mostrar el formulario para agregar un nuevo usuario
+Route::get('/add', [UserController::class, 'AddUser'])->name('add.user');
+
+// Almacenar un nuevo usuario
+Route::post('/store', [UserController::class, 'StoreUser'])->name('store.user');
+
+// Mostrar el formulario para editar un usuario
+Route::get('/edit/{id}', [UserController::class, 'EditUser'])->name('edit.user');
+
+// Actualizar un usuario existente
+Route::put('/update/{id}', [UserController::class, 'UpdateUser'])->name('update.user');
+
+// Eliminar un usuario
+Route::delete('/delete/{id}', [UserController::class, 'DeleteUser'])->name('delete.user');
+
+// Rutas para roles
+// Ruta para obtener todos los roles y permisos
+Route::get('/', [RoleController::class, 'allRolesAndPermissions'])->name('all.roles.permissions');
+
+// Ruta para crear un nuevo rol
+Route::post('/create', [RoleController::class, 'createRole'])->name('create.role');
+
+// Ruta para crear un nuevo permiso
+Route::post('/permissions/create', [RoleController::class, 'createPermission'])->name('create.permission');
+
