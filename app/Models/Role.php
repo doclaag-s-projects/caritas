@@ -11,6 +11,11 @@ class Role extends Model
 
     protected $fillable = [
         'nombre',
+        'estado',
+    ];
+
+    protected $attributes = [
+        'estado' => 0,
     ];
 
     public function usuariosRoles()
