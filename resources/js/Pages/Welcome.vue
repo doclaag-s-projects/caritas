@@ -1,16 +1,16 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import { Link, usePage } from "@inertiajs/vue3";
+import { ChevronLeft, Search, ChevronDown, ChevronUp, FileText, LogIn } from 'lucide-vue-next';
 
-// Variables reactivas
 const principales = ref([]);
 const searchQuery = ref("");
 const searchResult = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const sidebarOpen = ref(true);
 
-// Función para obtener categorías con archivos
 const fetchCategoriesWithFiles = async () => {
     loading.value = true;
     error.value = null;
@@ -25,10 +25,8 @@ const fetchCategoriesWithFiles = async () => {
     }
 };
 
-// Llamar a la función al montar el componente
 onMounted(fetchCategoriesWithFiles);
 
-// Función para expandir categorías y subcategorías
 const toggleCategory = (category) => {
     category.expanded = !category.expanded;
 };
@@ -36,7 +34,6 @@ const toggleSubcategory = (subcategory) => {
     subcategory.expanded = !subcategory.expanded;
 };
 
-// Función de búsqueda
 const searchFiles = () => {
     if (!searchQuery.value) {
         searchResult.value = principales.value;
@@ -55,160 +52,113 @@ const searchFiles = () => {
         searchResult.value = filteredCategories;
     }
 };
+
+const toggleSidebar = () => {
+    sidebarOpen.value = !sidebarOpen.value;
+};
+
+const flattenedFiles = computed(() => {
+    return searchResult.value.flatMap(category => 
+        category.subcategorias.flatMap(subcategory => 
+            subcategory.files
+        )
+    );
+});
 </script>
 
 <template>
-    <div class="biblioteca-publica">
-        <header>
-            <div class="header-left">
-                <button class="back-button">&lt;</button>
-                <img src="/img/logo-letters.png" alt="Logo" class="logo">
-                <h1>Biblioteca Pública</h1>
+    <div class="flex flex-col h-screen overflow-hidden font-sans bg-gray-100">
+        <header class="sticky top-0 flex justify-between items-center p-4 bg-white shadow-md z-50">
+            <div class="flex items-center">
+                <img src="/img/logo-letters.png" alt="Logo" class="w-10 h-10 mr-4">
+                <h1 class="text-2xl font-bold text-gray-800">Biblioteca Pública</h1>
             </div>
-            <Link :href="route('login')" class="login-button">Iniciar Sesión</Link>
+            <Link :href="route('login')" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <LogIn class="w-5 h-5 mr-2" />
+                Iniciar Sesión
+            </Link>
         </header>
 
-        <div class="main-content">
-            <aside class="sidebar">
-                <h2>Documentos públicos</h2>
-                <div v-for="(category, categoryIndex) in searchResult" :key="categoryIndex" class="area">
-                    <button @click="toggleCategory(category)" class="area-toggle">
-                        <span class="area-icon">{{ category.icon }}</span>
-                        <span class="area-text">{{ category.nombre_categoria }}</span>
-                        <span class="toggle-icon">{{ category.expanded ? '▲' : '▼' }}</span>
-                    </button>
+        <div class="flex flex-1 overflow-hidden">
+            <aside :class="['w-92 bg-white shadow-lg overflow-y-auto transition-all duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full']">
+                <div class="p-4">
+                    <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
+                    <div v-for="(category, categoryIndex) in searchResult" :key="categoryIndex" class="mb-2">
+                        <button @click="toggleCategory(category)" class="flex justify-between items-center w-full p-2 text-left hover:bg-gray-100 rounded transition-colors">
+                            <span class="text-gray-700">{{ category.nombre_categoria }}</span>
+                            <ChevronDown v-if="!category.expanded" class="w-5 h-5 text-gray-500" />
+                            <ChevronUp v-else class="w-5 h-5 text-gray-500" />
+                        </button>
 
-                    <div v-if="category.expanded">
-                        <div v-for="(subcategory, subIndex) in category.subcategorias" :key="subIndex" class="sub-area">
-                            <button @click="toggleSubcategory(subcategory)" class="sub-area-toggle">
-                                {{ subcategory.nombre_categoria }}
-                                <span class="toggle-icon">{{ subcategory.expanded ? '▲' : '▼' }}</span>
-                            </button>
-                            <ul v-if="subcategory.expanded">
-                                <li v-for="file in subcategory.files" :key="file.id">
-                                    <a :href="file.ubicacion_archivo" class="text-blue-500 hover:underline">{{
-                                        file.nombre_archivo }}</a>
-                                </li>
-                            </ul>
+                        <div v-if="category.expanded" class="ml-4">
+                            <div v-for="(subcategory, subIndex) in category.subcategorias" :key="subIndex" class="mb-2">
+                                <button @click="toggleSubcategory(subcategory)" class="flex justify-between items-center w-full p-2 text-left hover:bg-gray-100 rounded transition-colors">
+                                    <span class="text-gray-600">{{ subcategory.nombre_categoria }}</span>
+                                    <ChevronDown v-if="!subcategory.expanded" class="w-4 h-4 text-gray-400" />
+                                    <ChevronUp v-else class="w-4 h-4 text-gray-400" />
+                                </button>
+                                <ul v-if="subcategory.expanded" class="ml-4 space-y-1">
+                                    <li v-for="file in subcategory.files" :key="file.id" class="py-1">
+                                        <a :href="file.ubicacion_archivo" class="flex items-center text-blue-600 hover:text-blue-800 hover:underline">
+                                            <FileText class="w-4 h-4 mr-2" />
+                                            {{ file.nombre_archivo }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </aside>
 
-            <main>
-                <div class="search-bar">
-                    <input type="text" v-model="searchQuery" placeholder="Buscar archivos por nombre"
-                        class="search-input" />
-                    <button @click="searchFiles" class="search-button">Buscar</button>
-                </div>
+            <main class="flex-1 p-6 overflow-y-auto">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex mb-6 bg-white rounded-lg shadow-md">
+                        <input 
+                            type="text" 
+                            v-model="searchQuery" 
+                            placeholder="Buscar archivos por nombre"
+                            class="flex-1 p-3 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button 
+                            @click="searchFiles" 
+                            class="px-6 py-3 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                            <Search class="w-5 h-5" />
+                        </button>
+                    </div>
 
-                <div class="document-grid">
-                    <div v-for="file in searchResult.flatMap(category => category.files)" :key="file.id"
-                        class="document-item">
-                        {{ file.nombre_archivo }}
+                    <div v-if="loading" class="text-center py-10">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                        <p class="mt-4 text-gray-600">Cargando documentos...</p>
+                    </div>
+
+                    <div v-else-if="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
+                        <p class="font-bold">Error</p>
+                        <p>{{ error }}</p>
+                    </div>
+
+                    <div v-else-if="flattenedFiles.length === 0" class="text-center py-10">
+                        <FileText class="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <p class="text-xl font-semibold text-gray-700">No se encontraron documentos</p>
+                        <p class="text-gray-500 mt-2">Intenta con una búsqueda diferente</p>
+                    </div>
+
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div 
+                            v-for="file in flattenedFiles" 
+                            :key="file.id"
+                            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                        >
+                            <div class="p-4">
+                                <FileText class="w-8 h-8 text-blue-600 mb-2" />
+                                <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2">{{ file.nombre_archivo }}</h3>
+                                <a :href="file.ubicacion_archivo" class="text-blue-600 hover:underline text-sm">Ver documento</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
 </template>
-
-<style scoped>
-/* Estilos conservados del primer código */
-.biblioteca-publica {
-    font-family: Arial, sans-serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-header {
-    position: sticky;
-    top: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #ccc;
-    background-color: white;
-    z-index: 1000;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-}
-
-.back-button,
-.login-button,
-.search-button {
-    padding: 5px 10px;
-    margin: 0 10px;
-}
-
-.login-button {
-    background-color: #d9534f;
-    color: white;
-    border: none;
-    border-radius: 15px;
-}
-
-.search-button {
-    background-color: #d9534f;
-    color: white;
-    border: none;
-    border-radius: 15px;
-}
-
-.logo {
-    width: 50px;
-    height: 50px;
-    margin-right: 10px;
-}
-
-.main-content {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.search-bar {
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-}
-
-.search-input {
-    padding: 10px;
-    flex-grow: 1;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-.sidebar {
-    width: 350px;
-    padding: 25px;
-    background-color: #f8f9fa;
-    overflow-y: auto;
-    height: calc(100vh - 60px);
-}
-
-.document-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.document-item {
-    aspect-ratio: 1;
-    background-color: #e9ecef;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px;
-    color: #495057;
-}
-</style>
