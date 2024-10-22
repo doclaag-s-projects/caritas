@@ -10,7 +10,9 @@ const searchResult = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const sidebarOpen = ref(true);
+const results = ref(null);  // Resultados de la búsqueda
 
+// Función para obtener categorías y archivos
 const fetchCategoriesWithFiles = async () => {
     loading.value = true;
     error.value = null;
@@ -27,6 +29,7 @@ const fetchCategoriesWithFiles = async () => {
 
 onMounted(fetchCategoriesWithFiles);
 
+// Funciones para expandir categorías y subcategorías
 const toggleCategory = (category) => {
     category.expanded = !category.expanded;
 };
@@ -34,29 +37,51 @@ const toggleSubcategory = (subcategory) => {
     subcategory.expanded = !subcategory.expanded;
 };
 
-const searchFiles = () => {
-    if (!searchQuery.value) {
-        searchResult.value = principales.value;
-    } else {
-        const filteredCategories = principales.value.map((category) => {
-            const subcategories = category.subcategorias.map((subcategory) => {
-                const filteredFiles = subcategory.files.filter((file) =>
-                    file.nombre_archivo.toLowerCase().includes(searchQuery.value.toLowerCase())
-                );
-                return { ...subcategory, files: filteredFiles, expanded: filteredFiles.length > 0 };
-            }).filter(sub => sub.files.length > 0);
+// Función de búsqueda
+const searchFiles = async () => {
+    loading.value = true;
+    error.value = null;
+    results.value = null;
 
-            return { ...category, subcategorias: subcategories, expanded: subcategories.length > 0 };
-        }).filter(cat => cat.subcategorias.length > 0);
-
-        searchResult.value = filteredCategories;
+    try {
+        const response = await axios.get(`search?nombre=${searchQuery.value}`);
+        results.value = response.data;  // Asignar los resultados obtenidos
+    } catch (err) {
+        error.value = "Error al realizar la búsqueda.";
+    } finally {
+        loading.value = false;
     }
 };
 
+// Función para verificar si el archivo es un PDF
+const isPdf = (file) => {
+    return file.nombre_archivo.toLowerCase().endsWith('.pdf');
+};
+
+// Función para previsualizar archivos PDF
+const previewPdf = async (id) => {
+    try {
+        const response = await axios.get(`/files/${id}/preview`, {
+            headers: {
+                'Accept': 'application/json'
+            },
+            withCredentials: true
+        });
+        const fileUrl = response.data.url;
+
+        // Abre el PDF en una nueva pestaña del navegador
+        window.open(fileUrl, '_blank');
+    } catch (err) {
+        alert("Error al previsualizar el archivo.");
+    }
+};
+
+// Función para alternar el sidebar
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
 };
 
+// Filtrar los archivos planos
 const flattenedFiles = computed(() => {
     return searchResult.value.flatMap(category => 
         category.subcategorias.flatMap(subcategory => 
@@ -65,6 +90,7 @@ const flattenedFiles = computed(() => {
     );
 });
 </script>
+
 
 <template>
     <div class="flex flex-col h-screen overflow-hidden font-sans bg-gray-100">
@@ -103,6 +129,7 @@ const flattenedFiles = computed(() => {
                                             <FileText class="w-4 h-4 mr-2" />
                                             {{ file.nombre_archivo }}
                                         </a>
+                                        <button v-if="isPdf(file)" @click="previewPdf(file.id)" class="ml-2 text-sm text-blue-500 hover:underline">Previsualizar PDF</button>
                                     </li>
                                 </ul>
                             </div>
@@ -145,15 +172,30 @@ const flattenedFiles = computed(() => {
                     </div>
 
                     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div 
-                            v-for="file in flattenedFiles" 
-                            :key="file.id"
-                            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                        >
+                        <!-- Resultados de Categorías (mostrando solo los archivos PDF, ignorando subcategorías, en un diseño de grilla) -->
+                        <div v-for="file in results?.categorias.flatMap(categoria => categoria.subcategorias.flatMap(subcategoria => subcategoria.files)).filter(file => isPdf(file))" :key="file.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                             <div class="p-4">
                                 <FileText class="w-8 h-8 text-blue-600 mb-2" />
-                                <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2">{{ file.nombre_archivo }}</h3>
-                                <a :href="file.ubicacion_archivo" class="text-blue-600 hover:underline text-sm">Ver documento</a>
+                                <h3 class="font-semibold text-gray-800 mb-2">{{ file.nombre_archivo }}</h3>
+                                <a href="#" @click.prevent="previewPdf(file.id)" class="text-blue-600 hover:underline">Previsualizar PDF</a>
+                            </div>
+                        </div>
+
+                        <!-- Resultados de Archivos (cada archivo en su propia tarjeta) -->
+                        <div v-for="archivo in results?.archivos.filter(archivo => isPdf(archivo))" :key="archivo.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                            <div class="p-4">
+                                <FileText class="w-8 h-8 text-blue-600 mb-2" />
+                                <h3 class="font-semibold text-gray-800 mb-2">{{ archivo.nombre_archivo }}</h3>
+                                <a href="#" @click.prevent="previewPdf(archivo.id)" class="text-blue-600 hover:underline">Previsualizar PDF</a>
+                            </div>
+                        </div>
+
+                        <!-- Archivos por Etiquetas (cada archivo por etiqueta en su propia tarjeta) -->
+                        <div v-for="archivo in results?.archivosPorEtiquetas.filter(archivo => isPdf(archivo))" :key="archivo.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                            <div class="p-4">
+                                <FileText class="w-8 h-8 text-blue-600 mb-2" />
+                                <h3 class="font-semibold text-gray-800 mb-2">{{ archivo.nombre_archivo }}</h3>
+                                <a href="#" @click.prevent="previewPdf(archivo.id)" class="text-blue-600 hover:underline">Previsualizar PDF</a>
                             </div>
                         </div>
                     </div>
