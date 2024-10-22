@@ -60,3 +60,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
     Route::put('/tags/{tag}/estado', [TagController::class, 'cambiarEstado']);
 });
+
+Route::get('/users', function () {
+    return Inertia::render('Users/AllUsers');
+})->name('all.users');
