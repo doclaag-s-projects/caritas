@@ -12,149 +12,149 @@ import SubcategoryModal from '@/Components/SubcategoryModal.vue';
 import Switch from '@/Components/Switch.vue';
 import axios from 'axios';
 
-const categoriasPrincipales = ref( [] );
-const subcategorias = ref( [] );
-const etiquetas = ref( [] );
-const selectedTags = ref( [] );
-const showFileModal = ref( false );
-const showTagModal = ref( false );
-const showCategoryModal = ref( false );
-const showSubcategoryModal = ref( false );
-const modalMessage = ref( '' );
-const selectedFile = ref( null );
-const filePreviewUrl = ref( null );
-const form = ref( {
+const categoriasPrincipales = ref([]);
+const subcategorias = ref([]);
+const etiquetas = ref([]);
+const selectedTags = ref([]);
+const showFileModal = ref(false);
+const showTagModal = ref(false);
+const showCategoryModal = ref(false);
+const showSubcategoryModal = ref(false);
+const modalMessage = ref('');
+const selectedFile = ref(null);
+const filePreviewUrl = ref(null);
+const form = ref({
     estado: 0,
     publico: false,
     categoria: '',
     subcategoria: '',
     tag: null,
-} );
-const notifications = ref( [] );
-const resetTags = ref( false );
-const selectedEtiqueta = ref( null );
-const selectedCategoria = ref( null );
-const selectedSubcategoria = ref( null );
-const userId = ref( null );
-const newFileName = ref( '' ); // Nueva referencia para el nuevo nombre del archivo
+});
+const notifications = ref([]);
+const resetTags = ref(false);
+const selectedEtiqueta = ref(null);
+const selectedCategoria = ref(null);
+const selectedSubcategoria = ref(null);
+const userId = ref(null);
+const newFileName = ref(''); // Nueva referencia para el nuevo nombre del archivo
 
-const updateSelectedTags = ( newTags ) => {
+const updateSelectedTags = (newTags) => {
     selectedTags.value = newTags;
-    form.value.tag = selectedTags.value.length > 0 ? selectedTags.value.join( ',' ) : null;
+    form.value.tag = selectedTags.value.length > 0 ? selectedTags.value.join(',') : null;
 };
 
-const handleSwitchChange = ( value ) => {
+const handleSwitchChange = (value) => {
     form.value.publico = value ? 1 : 0;
 };
 
-onMounted( async () => {
-    const response = await axios.get( '/categories' );
+onMounted(async () => {
+    const response = await axios.get('/categories');
     categoriasPrincipales.value = response.data.principales;
     await loadTags();
-} );
+});
 
-watch( () => form.value.categoria, async ( newCategoriaId ) => {
-    if ( newCategoriaId ) {
-        const response = await axios.get( `/categories/${ newCategoriaId }/subcategories` );
+watch(() => form.value.categoria, async (newCategoriaId) => {
+    if (newCategoriaId) {
+        const response = await axios.get(`/categories/${newCategoriaId}/subcategories`);
         subcategorias.value = response.data;
     } else {
         subcategorias.value = [];
     }
-} );
+});
 
-const handleFileUpload = ( event ) => {
-    const file = event.target.files[ 0 ];
-    if ( file ) {
-        const validTypes = [ 'application/pdf' ];
-        if ( !validTypes.includes( file.type ) ) {
-            showNotification( 'error', 'Tipo de archivo no permitido. Solo se permiten archivos PDF.' );
+const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const validTypes = ['application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            showNotification('error', 'Tipo de archivo no permitido. Solo se permiten archivos PDF.');
             return;
         }
         selectedFile.value = file;
-        filePreviewUrl.value = URL.createObjectURL( file );
+        filePreviewUrl.value = URL.createObjectURL(file);
     }
 };
 
 const validateAndUploadFile = async () => {
-    if ( !selectedFile.value ) {
-        showNotification( 'error', 'Por favor, selecciona un archivo primero.' );
+    if (!selectedFile.value) {
+        showNotification('error', 'Por favor, selecciona un archivo primero.');
         return;
     }
-    if ( !form.value.categoria ) {
-        showNotification( 'error', 'Por favor, selecciona una categoría.' );
+    if (!form.value.categoria) {
+        showNotification('error', 'Por favor, selecciona una categoría.');
         return;
     }
-    if ( !form.value.tag ) {
-        showNotification( 'error', 'Por favor, selecciona al menos una etiqueta.' );
+    if (!form.value.tag) {
+        showNotification('error', 'Por favor, selecciona al menos una etiqueta.');
         return;
     }
 
     try {
         await uploadFile();
-    } catch ( error ) {
-        if ( error.response && error.response.status === 409 ) {
+    } catch (error) {
+        if (error.response && error.response.status === 409) {
             showFileModal.value = true;
             modalMessage.value = error.response.data.message;
         } else {
-            showNotification( 'error', 'Error al subir el archivo' );
+            showNotification('error', 'Error al subir el archivo');
         }
     }
 };
 
-const uploadFile = async ( action = '' ) => {
+const uploadFile = async (action = '') => {
     const formData = new FormData();
-    formData.append( 'file', selectedFile.value );
-    formData.append( 'estado', form.value.estado );
-    formData.append( 'publico', form.value.publico ? '1' : '0' );
-    formData.append( 'categoria', form.value.categoria );
-    formData.append( 'subcategoria', form.value.subcategoria );
-    formData.append( 'tag', form.value.tag );
+    formData.append('file', selectedFile.value);
+    formData.append('estado', form.value.estado);
+    formData.append('publico', form.value.publico ? '1' : '0');
+    formData.append('categoria', form.value.categoria);
+    formData.append('subcategoria', form.value.subcategoria);
+    formData.append('tag', form.value.tag);
 
-    if ( action ) {
-        formData.append( 'action', action );
+    if (action) {
+        formData.append('action', action);
     }
 
-    if ( action === 'rename' && newFileName.value ) {
-        formData.append( 'newFileName', newFileName.value );
+    if (action === 'rename' && newFileName.value) {
+        formData.append('newFileName', newFileName.value);
     }
 
     try {
-        const response = await axios.post( '/files/upload', formData );
-        if ( response.status === 200 ) {
-            showNotification( 'success', 'Archivo subido exitosamente.' );
+        const response = await axios.post('/files/upload', formData);
+        if (response.status === 200) {
+            showNotification('success', 'Archivo subido exitosamente.');
             selectedFile.value = null;
             filePreviewUrl.value = null;
             form.value.categoria = '';
             form.value.subcategoria = '';
             form.value.tag = null;
             resetTags.value = true;
-            setTimeout( () => resetTags.value = false, 0 );
+            setTimeout(() => resetTags.value = false, 0);
             reloadView();
         }
-    } catch ( error ) {
-        if ( error.response && error.response.status === 500 ) {
-            showNotification( 'error', 'Error del servidor al subir el archivo. Por favor, verifica las etiquetas.' );
-        } else if ( error.response && error.response.status === 409 ) {
+    } catch (error) {
+        if (error.response && error.response.status === 500) {
+            showNotification('error', 'Error del servidor al subir el archivo. Por favor, verifica las etiquetas.');
+        } else if (error.response && error.response.status === 409) {
             showFileModal.value = true;
             modalMessage.value = error.response.data.message;
         } else {
-            showNotification( 'error', 'Error al subir el archivo. Por favor, inténtalo de nuevo.' );
+            showNotification('error', 'Error al subir el archivo. Por favor, inténtalo de nuevo.');
         }
     }
 };
 
-const handleModalAction = async ( action ) => {
+const handleModalAction = async (action) => {
     showFileModal.value = false;
-    await uploadFile( action );
+    await uploadFile(action);
     reloadView();
 };
 
-const showNotification = ( type, message ) => {
+const showNotification = (type, message) => {
     const id = Date.now();
-    notifications.value.push( { id, type, message } );
-    setTimeout( () => {
-        notifications.value = notifications.value.filter( notification => notification.id !== id );
-    }, 5000 );
+    notifications.value.push({ id, type, message });
+    setTimeout(() => {
+        notifications.value = notifications.value.filter(notification => notification.id !== id);
+    }, 5000);
 };
 
 const reloadView = () => {
@@ -167,14 +167,14 @@ const openModal = () => {
 
 const loadTags = async () => {
     try {
-        const response = await axios.get( '/tags', { withCredentials: true } );
-        etiquetas.value = response.data;
-    } catch ( err ) {
-        showNotification( 'error', err.response?.data?.message || 'Error desconocido al cargar las etiquetas' );
+        const response = await axios.get('/tags', { withCredentials: true });
+        etiquetas.value = response.data.filter(tag => tag.automatico === 0);
+    } catch (err) {
+        showNotification('error', err.response?.data?.message || 'Error desconocido al cargar las etiquetas');
     }
 };
 
-const selectEtiqueta = ( etiqueta ) => {
+const selectEtiqueta = (etiqueta) => {
     selectedEtiqueta.value = etiqueta;
     showTagModal.value = true;
 };
@@ -191,14 +191,14 @@ const openSubcategoryModal = () => {
 
 const handleCategoryUpdated = async () => {
     showCategoryModal.value = false;
-    const response = await axios.get( '/categories' );
+    const response = await axios.get('/categories');
     categoriasPrincipales.value = response.data.principales;
 };
 
 const handleSubcategoryUpdated = async () => {
     showSubcategoryModal.value = false;
-    if ( form.value.categoria ) {
-        const response = await axios.get( `/categories/${ form.value.categoria }/subcategories` );
+    if (form.value.categoria) {
+        const response = await axios.get(`/categories/${form.value.categoria}/subcategories`);
         subcategorias.value = response.data;
     }
 };
