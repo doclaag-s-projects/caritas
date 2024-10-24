@@ -1,22 +1,22 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import axios from 'axios';
-import { Link, usePage } from "@inertiajs/vue3";
-import { ChevronLeft, Search, ChevronDown, ChevronUp, FileText, LogIn,XCircle} from 'lucide-vue-next';
+import { Link } from "@inertiajs/vue3";
+import {  Search, ChevronDown, ChevronUp, FileText, LogIn, XCircle } from 'lucide-vue-next';
 
-const principales = ref([]);
-const searchQuery = ref("");
-const searchResult = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const sidebarOpen = ref(true);
-const results = ref(null);
-const pdfUrl = ref(null); // URL del PDF a visualizar
-const pdfVisible = ref(false); // Controla si la vista del PDF está activa
+const principales = ref( [] );
+const searchQuery = ref( "" );
+const searchResult = ref( [] );
+const loading = ref( true );
+const error = ref( null );
+const sidebarOpen = ref( true );
+const results = ref( null );
+const pdfUrl = ref( null ); // URL del PDF a visualizar
+const pdfVisible = ref( false ); // Controla si la vista del PDF está activa
 
 // Variables de paginación
-const currentPage = ref(1);
-const itemsPerPage = ref(9); // Número de archivos por página
+const currentPage = ref( 1 );
+const itemsPerPage = ref( 9 ); // Número de archivos por página
 
 // Función para obtener categorías y archivos
 const fetchCategoriesWithFiles = async () => {
@@ -66,16 +66,16 @@ const isPdf = ( file ) => {
 
 /*/////////////////////////////////////////////////////////////// */
 // Función para previsualizar archivos PDF
-const previewPdf = async (id) => {
+const previewPdf = async ( id ) => {
     try {
-        const response = await axios.get(`/files/${id}/preview`, {
+        const response = await axios.get( `/files/${ id }/preview`, {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        });
+        } );
         pdfUrl.value = response.data.url;
         pdfVisible.value = true; // Activar vista del PDF
-    } catch (err) {
-        console.error("Error al previsualizar el archivo:", err);
+    } catch ( err ) {
+        console.error( "Error al previsualizar el archivo:", err );
     }
 };
 
@@ -85,63 +85,63 @@ const closePdfView = () => {
     pdfUrl.value = null; // Limpiar la URL del PDF
 };
 
-/*/////////////////////////////////////////////////////////////// */ 
+/*/////////////////////////////////////////////////////////////// */
 
 // Función para alternar el sidebar
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
 };
- 
+
 // Computed property para obtener archivos aplanados
-const flattenedFiles = computed(() => {
+const flattenedFiles = computed( () => {
     const files = [];
-    if (results.value) {
+    if ( results.value ) {
         // Archivos de las categorías
-        files.push(...results.value.archivos.filter(archivo => isPdf(archivo)));
+        files.push( ...results.value.archivos.filter( archivo => isPdf( archivo ) ) );
         // Archivos de las subcategorías
         files.push(
-            ...results.value.categorias.flatMap(categoria =>
-                categoria.subcategorias.flatMap(subcategoria =>
-                    subcategoria.files.filter(file => isPdf(file))
+            ...results.value.categorias.flatMap( categoria =>
+                categoria.subcategorias.flatMap( subcategoria =>
+                    subcategoria.files.filter( file => isPdf( file ) )
                 )
             )
         );
     } else {
-        files.push(...searchResult.value.flatMap(category =>
-            category.files.filter(file => isPdf(file)) // Archivos en la categoría
-        ));
-        files.push(...searchResult.value.flatMap(category =>
-            category.subcategorias.flatMap(subcategory =>
-                subcategory.files.filter(file => isPdf(file))
+        files.push( ...searchResult.value.flatMap( category =>
+            category.files.filter( file => isPdf( file ) ) // Archivos en la categoría
+        ) );
+        files.push( ...searchResult.value.flatMap( category =>
+            category.subcategorias.flatMap( subcategory =>
+                subcategory.files.filter( file => isPdf( file ) )
             )
-        ));
+        ) );
     }
     return files;
-});
+} );
 
 // Computed property para archivos paginados
-const paginatedFiles = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage.value;
-    return flattenedFiles.value.slice(start, start + itemsPerPage.value);
-});
+const paginatedFiles = computed( () => {
+    const start = ( currentPage.value - 1 ) * itemsPerPage.value;
+    return flattenedFiles.value.slice( start, start + itemsPerPage.value );
+} );
 
 // Funciones para paginación
-const totalPages = computed(() => Math.ceil(flattenedFiles.value.length / itemsPerPage.value));
+const totalPages = computed( () => Math.ceil( flattenedFiles.value.length / itemsPerPage.value ) );
 
-const goToPage = (page) => {
-    if (page > 0 && page <= totalPages.value) {
+const goToPage = ( page ) => {
+    if ( page > 0 && page <= totalPages.value ) {
         currentPage.value = page;
     }
 };
 
 const nextPage = () => {
-    if (currentPage.value < totalPages.value) {
+    if ( currentPage.value < totalPages.value ) {
         currentPage.value++;
     }
 };
 
 const previousPage = () => {
-    if (currentPage.value > 1) {
+    if ( currentPage.value > 1 ) {
         currentPage.value--;
     }
 };
@@ -153,7 +153,7 @@ const previousPage = () => {
     <div class="flex flex-col h-screen overflow-hidden font-sans bg-gray-100">
         <header class="sticky top-0 flex justify-between items-center p-4 bg-white shadow-md z-50">
             <div class="flex items-center">
-                <a href="/" > <img src="/img/logo-letters.png" alt="Logo" class="w-10 h-10 mr-4"></a>
+                <a href="/"> <img src="/img/logo-letters.png" alt="Logo" class="w-10 h-10 mr-4"></a>
                 <h1>Biblioteca Publica</h1>
             </div>
             <Link :href=" route( 'login' ) "
@@ -164,53 +164,61 @@ const previousPage = () => {
         </header>
 
         <div class="flex flex-1 overflow-hidden">
-            <aside :class=" [ 'w-80 bg-white shadow-lg transition-all duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full' ] ">
-    <div class="h-full overflow-y-auto overflow-x-hidden">
-        <div class="p-4">
-            <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
-            <div v-for="(category, index) in searchResult" :key="index" class="mb-2">
-                <button @click="toggleCategory(category)" class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
-                    <div class="flex items-center">
-                        <img src="/img/folder.svg" alt="folder" class="w-5 h-5 mr-2" />
-                        <span class="text-gray-700 truncate">{{ category.nombre_categoria }}</span>
-                    </div>
-                    <ChevronDown v-if="!category.expanded" class="w-5 h-5 text-gray-500" />
-                    <ChevronUp v-else class="w-5 h-5 text-gray-500" />
-                </button>
-                <ul v-if="category.expanded" class="ml-4 mt-2">
-                    <!-- Archivos en la categoría -->
-                    <li v-for="file in category.files" :key="file.id">
-                        <button @click.prevent="previewPdf(file.id)" class="text-blue-500 flex items-center w-full">
-                            <FileText class="w-4 h-4 mr-2" />
-                            <span class="truncate">{{ file.nombre_archivo }}</span>
-                        </button>
-                    </li>
-                </ul>
+            <aside
+                :class=" [ 'w-80 bg-white shadow-lg transition-all duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full' ] ">
+                <div class="h-full overflow-y-auto overflow-x-hidden">
+                    <div class="p-4">
+                        <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
+                        <div v-for="( category, index) in searchResult" :key=" index " class="mb-2">
+                            <button @click="toggleCategory( category )"
+                                class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
+                                <div class="flex items-center">
+                                    <img src="/img/folder.svg" alt="folder" class="w-5 h-5 mr-2" />
+                                    <span class="text-gray-700 truncate">{{ category.nombre_categoria }}</span>
+                                </div>
+                                <ChevronDown v-if=" !category.expanded " class="w-5 h-5 text-gray-500" />
+                                <ChevronUp v-else class="w-5 h-5 text-gray-500" />
+                            </button>
+                            <ul v-if=" category.expanded " class="ml-4 mt-2">
+                                <!-- Archivos en la categoría -->
+                                <li v-for=" file in category.files " :key=" file.id ">
+                                    <button @click.prevent="previewPdf( file.id )"
+                                        class="text-blue-500 flex items-center w-full">
+                                        <FileText class="w-4 h-4 mr-2" />
+                                        <span class="truncate">{{ file.nombre_archivo }}</span>
+                                    </button>
+                                </li>
+                            </ul>
 
-                <div v-if="category.expanded" class="ml-4 mt-2">
-                    <div v-for="(subcategory, subIndex) in category.subcategorias" :key="subIndex" class="mb-2">
-                        <button @click="toggleSubcategory(subcategory)" class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
-                            <div class="flex items-center">
-                                <img src="/img/corner-down-right.svg" alt="corner-down-right" class="w-4 h-4 mr-2" />
-                                <span class="text-gray-600 truncate">{{ subcategory.nombre_categoria }}</span>
+                            <div v-if=" category.expanded " class="ml-4 mt-2">
+                                <div v-for="( subcategory, subIndex) in category.subcategorias" :key=" subIndex "
+                                    class="mb-2">
+                                    <button @click="toggleSubcategory( subcategory )"
+                                        class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
+                                        <div class="flex items-center">
+                                            <img src="/img/corner-down-right.svg" alt="corner-down-right"
+                                                class="w-4 h-4 mr-2" />
+                                            <span class="text-gray-600 truncate">{{ subcategory.nombre_categoria
+                                                }}</span>
+                                        </div>
+                                        <ChevronDown v-if=" !subcategory.expanded " class="w-4 h-4 text-gray-400" />
+                                        <ChevronUp v-else class="w-4 h-4 text-gray-400" />
+                                    </button>
+                                    <ul v-if=" subcategory.expanded " class="ml-4 mt-2">
+                                        <li v-for=" file in subcategory.files " :key=" file.id ">
+                                            <button @click.prevent="previewPdf( file.id )"
+                                                class="text-blue-500 flex items-center w-full">
+                                                <FileText class="w-4 h-4 mr-2" />
+                                                <span class="truncate">{{ file.nombre_archivo }}</span>
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
-                            <ChevronDown v-if="!subcategory.expanded" class="w-4 h-4 text-gray-400" />
-                            <ChevronUp v-else class="w-4 h-4 text-gray-400" />
-                        </button>
-                        <ul v-if="subcategory.expanded" class="ml-4 mt-2">
-                            <li v-for="file in subcategory.files" :key="file.id">
-                                <button @click.prevent="previewPdf(file.id)" class="text-blue-500 flex items-center w-full">
-                                    <FileText class="w-4 h-4 mr-2" />
-                                    <span class="truncate">{{ file.nombre_archivo }}</span>
-                                </button>
-                            </li>
-                        </ul>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</aside>
+            </aside>
 
 
             <main class="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100">
@@ -219,8 +227,9 @@ const previousPage = () => {
                         <div
                             class="flex  bg-white rounded-full shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
                             <input type="text" v-model=" searchQuery " placeholder="Buscar archivos por nombre"
-                                class="flex-1 pl-12 pr-4 py-4 text-gray-700 border-transparent placeholder-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50" />
-                                <button @click="searchFiles" class="px-4 py-2 text-white bg-blue-600 rounded-r-full hover:bg-blue-700">
+                                class="flex-1 pl-12 pr-4 py-4 text-gray-700 border-none placeholder-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50" />
+                            <button @click=" searchFiles "
+                                class="px-4 py-2 text-white bg-blue-600 rounded-r-full hover:bg-blue-700">
                                 <Search />
                             </button>
                         </div>
@@ -247,7 +256,7 @@ const previousPage = () => {
                     </div>
 
                     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <div v-for=" file in paginatedFiles " :key=" file.id "
+                        <div v-for="  file in paginatedFiles  " :key=" file.id "
                             class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                             <div class="p-6">
                                 <FileText class="w-10 h-10 text-blue-600 mb-4" />
@@ -262,27 +271,35 @@ const previousPage = () => {
                     </div>
                     <!-- Paginación -->
                     <div class="flex justify-between items-center mt-4">
-                        <button @click="previousPage" :disabled="currentPage === 1" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white rounded-full" >
+                        <button @click=" previousPage " :disabled=" currentPage === 1 "
+                            class="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-full">
                             Anterior
                         </button>
                         <span class="text-blue-700">Página {{ currentPage }} de {{ totalPages }}</span>
-                        <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white rounded-full">
+                        <button @click=" nextPage " :disabled=" currentPage === totalPages "
+                            class="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-full">
                             Siguiente
                         </button>
                     </div>
 
                 </div>
-                <div v-if="pdfVisible" class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center">
-                        <div class="relative w-3/4 h-3/4 bg-white rounded-lg overflow-hidden">
-                            <button @click="closePdfView" class="absolute top-2 right-2 text-red-500">
-                                <XCircle class="w-8 h-8" />
-                            </button>
-                            <iframe
-                                :src="pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0'"
-                                class="w-full h-full">
-                            </iframe>
-                        </div>
-                    </div>
+                <div v-if="pdfVisible" class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+    <div class="relative w-11/12 h-5/6 bg-white rounded-lg overflow-hidden shadow-2xl">
+      <button
+        @click="closePdfView"
+        class="absolute top-4 right-6 text-red-400 hover:text-red-600 transition-colors duration-200 focus:outline-none"
+        aria-label="Close PDF viewer"
+      >
+        <XCircle class="w-11 h-11" />
+      </button>
+      <iframe
+        :src="pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0'"
+        class="w-full h-full"
+        title="PDF Viewer"
+      >
+      </iframe>
+    </div>
+  </div>
             </main>
         </div>
     </div>
@@ -294,6 +311,7 @@ const previousPage = () => {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 iframe {
     border: none;
 }
