@@ -14,6 +14,10 @@ const results = ref(null);
 const pdfUrl = ref(null); // URL del PDF a visualizar
 const pdfVisible = ref(false); // Controla si la vista del PDF está activa
 
+// Variables de paginación
+const currentPage = ref(1);
+const itemsPerPage = ref(9); // Número de archivos por página
+
 // Función para obtener categorías y archivos
 const fetchCategoriesWithFiles = async () => {
     loading.value = true;
@@ -89,27 +93,60 @@ const toggleSidebar = () => {
 };
  
 // Computed property para obtener archivos aplanados
-const flattenedFiles = computed( () => {
+const flattenedFiles = computed(() => {
     const files = [];
-    if ( results.value ) {
+    if (results.value) {
+        // Archivos de las categorías
+        files.push(...results.value.archivos.filter(archivo => isPdf(archivo)));
+        // Archivos de las subcategorías
         files.push(
-            ...results.value.categorias.flatMap( categoria =>
-                categoria.subcategorias.flatMap( subcategoria =>
-                    subcategoria.files.filter( file => isPdf( file ) )
+            ...results.value.categorias.flatMap(categoria =>
+                categoria.subcategorias.flatMap(subcategoria =>
+                    subcategoria.files.filter(file => isPdf(file))
                 )
-            ),
-            ...results.value.archivos.filter( archivo => isPdf( archivo ) ),
-            ...results.value.archivosPorEtiquetas.filter( archivo => isPdf( archivo ) )
+            )
         );
     } else {
-        files.push( ...searchResult.value.flatMap( category =>
-            category.subcategorias.flatMap( subcategory =>
-                subcategory.files.filter( file => isPdf( file ) )
+        files.push(...searchResult.value.flatMap(category =>
+            category.files.filter(file => isPdf(file)) // Archivos en la categoría
+        ));
+        files.push(...searchResult.value.flatMap(category =>
+            category.subcategorias.flatMap(subcategory =>
+                subcategory.files.filter(file => isPdf(file))
             )
-        ) );
+        ));
     }
     return files;
-} );
+});
+
+// Computed property para archivos paginados
+const paginatedFiles = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    return flattenedFiles.value.slice(start, start + itemsPerPage.value);
+});
+
+// Funciones para paginación
+const totalPages = computed(() => Math.ceil(flattenedFiles.value.length / itemsPerPage.value));
+
+const goToPage = (page) => {
+    if (page > 0 && page <= totalPages.value) {
+        currentPage.value = page;
+    }
+};
+
+const nextPage = () => {
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+    }
+};
+
+const previousPage = () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+    }
+};
+
+
 </script>
 
 <template>
@@ -128,44 +165,53 @@ const flattenedFiles = computed( () => {
 
         <div class="flex flex-1 overflow-hidden">
             <aside :class=" [ 'w-80 bg-white shadow-lg transition-all duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full' ] ">
-                <div class="h-full overflow-y-auto overflow-x-auto">
-                    <div class="p-4">
-                        <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
-                        <div v-for="(category, index) in searchResult" :key="index" class="mb-2">
-                        <button @click="toggleCategory(category)" class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
-                                <div class="flex items-center">
-                                    <img src="/img/folder.svg" alt="folder" class="w-5 h-5 mr-2" />
-                                    <span class="text-gray-700">{{ category.nombre_categoria }}</span>
-                                </div>
-                                <ChevronDown v-if="!category.expanded" class="w-5 h-5 text-gray-500" />
-                            <ChevronUp v-else class="w-5 h-5 text-gray-500" />
+    <div class="h-full overflow-y-auto overflow-x-hidden">
+        <div class="p-4">
+            <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
+            <div v-for="(category, index) in searchResult" :key="index" class="mb-2">
+                <button @click="toggleCategory(category)" class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
+                    <div class="flex items-center">
+                        <img src="/img/folder.svg" alt="folder" class="w-5 h-5 mr-2" />
+                        <span class="text-gray-700 truncate">{{ category.nombre_categoria }}</span>
+                    </div>
+                    <ChevronDown v-if="!category.expanded" class="w-5 h-5 text-gray-500" />
+                    <ChevronUp v-else class="w-5 h-5 text-gray-500" />
+                </button>
+                <ul v-if="category.expanded" class="ml-4 mt-2">
+                    <!-- Archivos en la categoría -->
+                    <li v-for="file in category.files" :key="file.id">
+                        <button @click.prevent="previewPdf(file.id)" class="text-blue-500 flex items-center w-full">
+                            <FileText class="w-4 h-4 mr-2" />
+                            <span class="truncate">{{ file.nombre_archivo }}</span>
                         </button>
+                    </li>
+                </ul>
 
-                        <div v-if="category.expanded" class="ml-4 mt-2">
-                            <div v-for="(subcategory, subIndex) in category.subcategorias" :key="subIndex" class="mb-2">
-                                <button @click="toggleSubcategory(subcategory)" class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
-                                        <div class="flex items-center">
-                                            <img src="/img/corner-down-right.svg" alt="corner-down-right"
-                                                class="w-4 h-4 mr-2" />
-                                                <span class="text-gray-600">{{ subcategory.nombre_categoria }}</span>
-                                        </div>
-                                        <ChevronDown v-if="!subcategory.expanded" class="w-4 h-4 text-gray-400" />
-                                    <ChevronUp v-else class="w-4 h-4 text-gray-400" />
-                                </button>
-                                <ul v-if="subcategory.expanded" class="ml-4 mt-2">
-                                    <li v-for="file in subcategory.files" :key="file.id">
-                                            <button @click.prevent="previewPdf(file.id)" class="text-blue-500 flex items-center">
-                                            <FileText class="w-4 h-4 mr-2" />
-                                            {{ file.nombre_archivo }}
-                                        </button>
-                                        </li>
-                                    </ul>
-                                </div>
+                <div v-if="category.expanded" class="ml-4 mt-2">
+                    <div v-for="(subcategory, subIndex) in category.subcategorias" :key="subIndex" class="mb-2">
+                        <button @click="toggleSubcategory(subcategory)" class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
+                            <div class="flex items-center">
+                                <img src="/img/corner-down-right.svg" alt="corner-down-right" class="w-4 h-4 mr-2" />
+                                <span class="text-gray-600 truncate">{{ subcategory.nombre_categoria }}</span>
                             </div>
-                        </div>
+                            <ChevronDown v-if="!subcategory.expanded" class="w-4 h-4 text-gray-400" />
+                            <ChevronUp v-else class="w-4 h-4 text-gray-400" />
+                        </button>
+                        <ul v-if="subcategory.expanded" class="ml-4 mt-2">
+                            <li v-for="file in subcategory.files" :key="file.id">
+                                <button @click.prevent="previewPdf(file.id)" class="text-blue-500 flex items-center w-full">
+                                    <FileText class="w-4 h-4 mr-2" />
+                                    <span class="truncate">{{ file.nombre_archivo }}</span>
+                                </button>
+                            </li>
+                        </ul>
                     </div>
                 </div>
-            </aside>
+            </div>
+        </div>
+    </div>
+</aside>
+
 
             <main class="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100">
                 <div class="max-w-4xl mx-auto">
@@ -201,7 +247,7 @@ const flattenedFiles = computed( () => {
                     </div>
 
                     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <div v-for=" file in flattenedFiles " :key=" file.id "
+                        <div v-for=" file in paginatedFiles " :key=" file.id "
                             class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                             <div class="p-6">
                                 <FileText class="w-10 h-10 text-blue-600 mb-4" />
@@ -214,6 +260,17 @@ const flattenedFiles = computed( () => {
                             </div>
                         </div>
                     </div>
+                    <!-- Paginación -->
+                    <div class="flex justify-between items-center mt-4">
+                        <button @click="previousPage" :disabled="currentPage === 1" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white rounded-full" >
+                            Anterior
+                        </button>
+                        <span class="text-blue-700">Página {{ currentPage }} de {{ totalPages }}</span>
+                        <button @click="nextPage" :disabled="currentPage === totalPages" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white rounded-full">
+                            Siguiente
+                        </button>
+                    </div>
+
                 </div>
                 <div v-if="pdfVisible" class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center">
                         <div class="relative w-3/4 h-3/4 bg-white rounded-lg overflow-hidden">
