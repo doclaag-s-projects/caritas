@@ -46,11 +46,11 @@
                     <td>{{ categoria.full_path }}</td>
                     <td class="hidden-column">{{ categoria.nivel }}</td>
                     <td>
-                        <button @click="editarModal(categoria.id, categoria.categoria_principal)" class="btn-accion editar">
-                            <img src="/img/edit.svg" alt="Edit" class="w-8 h-8" />
+                        <button @click="editarModal(categoria.id, categoria.categoria_principal)" class="btn-accion hover:bg-gray-300 editar ">
+                            <img src="/img/edit.svg" alt="Edit" class="w-8 h-8 hover:bg-gray-300 rounded-full" />
                         </button>
-                        <button @click="confirmarEliminacion(categoria.id)" class="btn-accion eliminar">
-                            <img src="/img/trash.svg" alt="Trash" class="w-8 h-8" />
+                        <button @click="confirmarEliminacion(categoria.id)" class="btn-accion hover:bg-gray-200 eliminar">
+                            <img src="/img/trash.svg" alt="Trash" class="w-8 h-8 hover:bg-gray-200 rounded-full" />
                         </button>
                     </td>
                 </tr>
@@ -59,99 +59,142 @@
     </div>
 
     <!-- Modal Crear Categoria -->
-    <div v-if="showModalCategoria" class="modal">
-        <div class="modal-content">
-            <span @click="showModalCategoria = false" class="close">&times;</span>
-            <h2>Crear Nueva Categoría</h2>
-            <form @submit.prevent="guardarCategoria">
-                <label for="nombreCategoria">Nombre Categoría:</label>
-                <input type="text" id="nombreCategoria" v-model="nombreCategoria" required>
-
-                <label for="descripcionCategoria">Descripción Categoría:</label>
-                <textarea id="descripcionCategoria" v-model="descripcionCategoria" required></textarea>
-
-                <div class="modal-buttons">
-                    <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalCategoria = false" class="btn-cancelar">Cancelar</button>
-                </div>
-            </form>
-        </div>
+<div v-if="showModalCategoria" class="modal bg-gray-100 border border-gray-300 rounded p-4">
+    <div class="modal-content">
+        <span @click="showModalCategoria = false" class="close text-gray-700 cursor-pointer">&times;</span>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Crear Nueva Categoría</h2>
+        <form @submit.prevent="guardarCategoria" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+            <div class="mb-4">
+                <label for="nombreCategoria" class="block text-gray-700">Nombre Categoría:</label>
+                <input type="text" id="nombreCategoria" v-model="nombreCategoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+            </div>
+            <div class="mb-4">
+                <label for="descripcionCategoria" class="block text-gray-700">Descripción Categoría:</label>
+                <textarea id="descripcionCategoria" v-model="descripcionCategoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    Aceptar
+                </button>
+                <button type="button" @click="showModalCategoria = false"
+                    class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600">
+                    Cancelar
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Modal Crear Subcategoria -->
-    <div v-if="showModalSubcategoria" class="modal">
-        <div class="modal-content">
-            <span @click="showModalSubcategoria = false" class="close">&times;</span>
-            <h2>Crear Nueva Subcategoría</h2>
-            <form @submit.prevent="guardarSubcategoria">
-                <label for="nombreSubcategoria">Nombre Subcategoría:</label>
-                <input type="text" id="nombreSubcategoria" v-model="nombreSubcategoria" required>
-
-                <label for="descripcionSubcategoria">Descripción Subcategoría:</label>
-                <textarea id="descripcionSubcategoria" v-model="descripcionSubcategoria" required></textarea>
-
-                <label for="categoriaPrincipal">Categoría Principal:</label>
-                <select id="categoriaPrincipal" v-model="categoriaPrincipal" required>
+<!-- Modal Crear Subcategoria -->
+<div v-if="showModalSubcategoria" class="modal bg-gray-100 border border-gray-300 rounded p-4">
+    <div class="modal-content">
+        <span @click="showModalSubcategoria = false" class="close text-gray-700 cursor-pointer">&times;</span>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Crear Nueva Subcategoría</h2>
+        <form @submit.prevent="guardarSubcategoria" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+            <div class="mb-4">
+                <label for="nombreSubcategoria" class="block text-gray-700">Nombre Subcategoría:</label>
+                <input type="text" id="nombreSubcategoria" v-model="nombreSubcategoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+            </div>
+            <div class="mb-4">
+                <label for="descripcionSubcategoria" class="block text-gray-700">Descripción Subcategoría:</label>
+                <textarea id="descripcionSubcategoria" v-model="descripcionSubcategoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="categoriaPrincipal" class="block text-gray-700">Categoría Principal:</label>
+                <select id="categoriaPrincipal" v-model="categoriaPrincipal" 
+                    class="block w-full bg-white border border-gray-300 text-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                    <option value="">Seleccione una categoría</option>
                     <option v-for="categoria in categoriasPrincipales" :key="categoria.id" :value="categoria.id">
                         {{ categoria.nombre_categoria }}
                     </option>
                 </select>
-
-                <div class="modal-buttons">
-                    <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalSubcategoria = false" class="btn-cancelar">Cancelar</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    Aceptar
+                </button>
+                <button type="button" @click="showModalSubcategoria = false"
+                    class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600">
+                    Cancelar
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Modal Editar Categoria -->
-    <div v-if="showModalEditarCategoria" class="modal">
-        <div class="modal-content">
-            <span @click="showModalEditarCategoria = false" class="close">&times;</span>
-            <h2>Editar Categoría</h2>
-            <form @submit.prevent="guardarCategoriaEditada">
-                <label for="nombreCategoriaEditada">Nombre Categoría:</label>
-                <input type="text" id="nombreCategoriaEditada" v-model="categoriaEditada.nombre_categoria" required>
-
-                <label for="descripcionCategoriaEditada">Descripción Categoría:</label>
-                <textarea id="descripcionCategoriaEditada" v-model="categoriaEditada.descripcion_categoria" required></textarea>
-
-                <div class="modal-buttons">
-                    <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalEditarCategoria = false" class="btn-cancelar">Cancelar</button>
-                </div>
-            </form>
-        </div>
+<!-- Modal Editar Categoria -->
+<div v-if="showModalEditarCategoria" class="modal bg-gray-100 border border-gray-300 rounded p-4">
+    <div class="modal-content">
+        <span @click="showModalEditarCategoria = false" class="close text-gray-700 cursor-pointer">&times;</span>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Editar Categoría</h2>
+        <form @submit.prevent="guardarCategoriaEditada" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+            <div class="mb-4">
+                <label for="nombreCategoriaEditada" class="block text-gray-700">Nombre Categoría:</label>
+                <input type="text" id="nombreCategoriaEditada" v-model="categoriaEditada.nombre_categoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+            </div>
+            <div class="mb-4">
+                <label for="descripcionCategoriaEditada" class="block text-gray-700">Descripción Categoría:</label>
+                <textarea id="descripcionCategoriaEditada" v-model="categoriaEditada.descripcion_categoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    Aceptar
+                </button>
+                <button type="button" @click="showModalEditarCategoria = false"
+                    class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600">
+                    Cancelar
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Modal Editar Subcategoria -->
-    <div v-if="showModalEditarSubcategoria" class="modal">
-        <div class="modal-content">
-            <span @click="showModalEditarSubcategoria = false" class="close">&times;</span>
-            <h2>Editar Subcategoría</h2>
-            <form @submit.prevent="guardarSubcategoriaEditada">
-                <label for="nombreSubcategoriaEditada">Nombre Subcategoría:</label>
-                <input type="text" id="nombreSubcategoriaEditada" v-model="subcategoriaEditada.nombre_categoria" required>
-
-                <label for="descripcionSubcategoriaEditada">Descripción Subcategoría:</label>
-                <textarea id="descripcionSubcategoriaEditada" v-model="subcategoriaEditada.descripcion_categoria" required></textarea>
-
-                <label for="categoriaPrincipalEditada">Categoría Principal:</label>
-                <select id="categoriaPrincipalEditada" v-model="subcategoriaEditada.categoria_padre" required>
+<!-- Modal Editar Subcategoria -->
+<div v-if="showModalEditarSubcategoria" class="modal bg-gray-100 border border-gray-300 rounded p-4">
+    <div class="modal-content">
+        <span @click="showModalEditarSubcategoria = false" class="close text-gray-700 cursor-pointer">&times;</span>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Editar Subcategoría</h2>
+        <form @submit.prevent="guardarSubcategoriaEditada" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+            <div class="mb-4">
+                <label for="nombreSubcategoriaEditada" class="block text-gray-700">Nombre Subcategoría:</label>
+                <input type="text" id="nombreSubcategoriaEditada" v-model="subcategoriaEditada.nombre_categoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+            </div>
+            <div class="mb-4">
+                <label for="descripcionSubcategoriaEditada" class="block text-gray-700">Descripción Subcategoría:</label>
+                <textarea id="descripcionSubcategoriaEditada" v-model="subcategoriaEditada.descripcion_categoria" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="categoriaPrincipalEditada" class="block text-gray-700">Categoría Principal:</label>
+                <select id="categoriaPrincipalEditada" v-model="subcategoriaEditada.categoria_padre" 
+                    class="block w-full bg-white border border-gray-300 text-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                    <option value="">Seleccione una categoría</option>
                     <option v-for="categoria in categoriasPrincipales" :key="categoria.id" :value="categoria.id">
                         {{ categoria.nombre_categoria }}
                     </option>
                 </select>
-
-                <div class="modal-buttons">
-                    <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalEditarSubcategoria = false" class="btn-cancelar">Cancelar</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    Aceptar
+                </button>
+                <button type="button" @click="showModalEditarSubcategoria = false"
+                    class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600">
+                    Cancelar
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
+<!-- Modal Confirmación Eliminación -->
     <!-- Modal Confirmación Eliminación -->
     <div v-if="showConfirmacionEliminacion" class="modal">
         <div class="modal-content">
@@ -167,6 +210,7 @@
             </div>
         </div>
     </div>
+
     <!-- Toast Notifications -->
     <ToastNotification
         v-for="notification in notifications"
@@ -338,7 +382,8 @@ export default {
             this.addNotification('success', 'Categoría creada exitosamente');
         } catch (error) {
             console.error('Error al guardar la categoría:', error);
-            this.addNotification('error', 'Error al guardar la categoría');
+            const errorMessage = error.response?.data?.error || 'Error al guardar la categoría';
+                this.addNotification('error', errorMessage);
         }
     },
     async guardarSubcategoria() {
@@ -361,8 +406,8 @@ export default {
             this.obtenerCategoriasRecursivas();
             this.addNotification('success', 'Subcategoría creada exitosamente');
         } catch (error) {
-            console.error('Error al guardar la subcategoría:', error);
-            this.addNotification('error', 'Error al guardar la subcategoría');
+            const errorMessage = error.response?.data?.error || 'Error al guardar la subcategoría';
+                this.addNotification('error', errorMessage);
         }
     },
 confirmarEliminacion(id) {
