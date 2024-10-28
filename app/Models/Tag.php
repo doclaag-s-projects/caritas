@@ -14,6 +14,7 @@ class Tag extends Model
     protected $fillable = [
         'nombre_etiqueta',
         'descripcion_etiqueta',
+        'automatico',
         'estado',
         'usuarios_id',
     ];

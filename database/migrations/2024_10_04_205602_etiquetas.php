@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nombre_etiqueta');
             $table->string('descripcion_etiqueta');
             $table->boolean('estado')->default(1);
+            $table->boolean('automatico')->default(0);
             $table->foreignId('usuarios_id')->constrained('users')->onDelete('cascade')->onUpdate('cascade');
             $table->timestamps();
         });

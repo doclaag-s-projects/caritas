@@ -1,23 +1,23 @@
 <template>
     <div class="categoria-container">
         <div class="buscador">
-            <input type="text" placeholder="Escriba aqui para buscar una categoría..." v-model="searchQuery" />
-            <select v-model="searchOption">
+            <input type="text" placeholder="Escriba aqui para buscar una categoría..." v-model=" searchQuery " />
+            <select v-model=" searchOption ">
                 <option value="nombre">Nombre</option>
                 <option value="descripcion">Descripción</option>
             </select>
-            <button @click="buscarCategoria">
-                <img src="/img/SearchCategories.svg" alt="SearchCategories" class="w-8 h-8" />
+            <button @click=" buscarCategoria ">
+                <img src="/img/searchCategories.svg" alt="Search Categories" class="w-8 h-8" />
             </button>
         </div>
 
         <div class="add-buttons">
-            <button @click="agregarCategoria" class="btn-agregar">
-                <img src="/img/Plus.svg" alt="Plus" class="w-8 h-8" />
+            <button @click=" agregarCategoria " class="btn-agregar">
+                <img src="/img/plus.svg" alt="Plus" class="w-8 h-8" />
                 Añadir Categoría
             </button>
-            <button @click="agregarSubcategoria" class="btn-agregar">
-                <img src="/img/Plus.svg" alt="Plus" class="w-8 h-8" />
+            <button @click=" agregarSubcategoria " class="btn-agregar">
+                <img src="/img/plus.svg" alt="Plus" class="w-8 h-8" />
                 Añadir Subcategoría
             </button>
         </div>
@@ -35,7 +35,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="categoria in filteredCategorias" :key="categoria.id" :class="getNivelClass(categoria.nivel)">
+                <tr v-for=" categoria in filteredCategorias " :key=" categoria.id " :class=" getNivelClass( categoria.nivel ) ">
                     <td class="hidden-column">{{ categoria.id }}</td>
                     <td>
                         <strong>{{ categoria.nombre_categoria }}</strong><br>
@@ -46,10 +46,11 @@
                     <td>{{ categoria.full_path }}</td>
                     <td class="hidden-column">{{ categoria.nivel }}</td>
                     <td>
-                        <button @click="editarModal(categoria.id, categoria.categoria_principal)" class="btn-accion editar">
+                        <button @click="editarModal( categoria.id, categoria.categoria_principal )"
+                            class="btn-accion editar">
                             <img src="/img/edit.svg" alt="Edit" class="w-8 h-8" />
                         </button>
-                        <button @click="confirmarEliminacion(categoria.id)" class="btn-accion eliminar">
+                        <button @click="confirmarEliminacion( categoria.id )" class="btn-accion eliminar">
                             <img src="/img/trash.svg" alt="Trash" class="w-8 h-8" />
                         </button>
                     </td>
@@ -59,16 +60,16 @@
     </div>
 
     <!-- Modal Crear Categoria -->
-    <div v-if="showModalCategoria" class="modal">
+    <div v-if=" showModalCategoria " class="modal">
         <div class="modal-content">
             <span @click="showModalCategoria = false" class="close">&times;</span>
             <h2>Crear Nueva Categoría</h2>
-            <form @submit.prevent="guardarCategoria">
+            <form @submit.prevent=" guardarCategoria ">
                 <label for="nombreCategoria">Nombre Categoría:</label>
-                <input type="text" id="nombreCategoria" v-model="nombreCategoria" required>
+                <input type="text" id="nombreCategoria" v-model=" nombreCategoria " required>
 
                 <label for="descripcionCategoria">Descripción Categoría:</label>
-                <textarea id="descripcionCategoria" v-model="descripcionCategoria" required></textarea>
+                <textarea id="descripcionCategoria" v-model=" descripcionCategoria " required></textarea>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-aceptar">Aceptar</button>
@@ -79,20 +80,20 @@
     </div>
 
     <!-- Modal Crear Subcategoria -->
-    <div v-if="showModalSubcategoria" class="modal">
+    <div v-if=" showModalSubcategoria " class="modal">
         <div class="modal-content">
             <span @click="showModalSubcategoria = false" class="close">&times;</span>
             <h2>Crear Nueva Subcategoría</h2>
-            <form @submit.prevent="guardarSubcategoria">
+            <form @submit.prevent=" guardarSubcategoria ">
                 <label for="nombreSubcategoria">Nombre Subcategoría:</label>
-                <input type="text" id="nombreSubcategoria" v-model="nombreSubcategoria" required>
+                <input type="text" id="nombreSubcategoria" v-model=" nombreSubcategoria " required>
 
                 <label for="descripcionSubcategoria">Descripción Subcategoría:</label>
-                <textarea id="descripcionSubcategoria" v-model="descripcionSubcategoria" required></textarea>
+                <textarea id="descripcionSubcategoria" v-model=" descripcionSubcategoria " required></textarea>
 
                 <label for="categoriaPrincipal">Categoría Principal:</label>
-                <select id="categoriaPrincipal" v-model="categoriaPrincipal" required>
-                    <option v-for="categoria in categoriasPrincipales" :key="categoria.id" :value="categoria.id">
+                <select id="categoriaPrincipal" v-model=" categoriaPrincipal " required>
+                    <option v-for=" categoria in categoriasPrincipales " :key=" categoria.id " :value=" categoria.id ">
                         {{ categoria.nombre_categoria }}
                     </option>
                 </select>
@@ -106,54 +107,59 @@
     </div>
 
     <!-- Modal Editar Categoria -->
-    <div v-if="showModalEditarCategoria" class="modal">
+    <div v-if=" showModalEditarCategoria " class="modal">
         <div class="modal-content">
             <span @click="showModalEditarCategoria = false" class="close">&times;</span>
             <h2>Editar Categoría</h2>
-            <form @submit.prevent="guardarCategoriaEditada">
+            <form @submit.prevent=" guardarCategoriaEditada ">
                 <label for="nombreCategoriaEditada">Nombre Categoría:</label>
-                <input type="text" id="nombreCategoriaEditada" v-model="categoriaEditada.nombre_categoria" required>
+                <input type="text" id="nombreCategoriaEditada" v-model=" categoriaEditada.nombre_categoria " required>
 
                 <label for="descripcionCategoriaEditada">Descripción Categoría:</label>
-                <textarea id="descripcionCategoriaEditada" v-model="categoriaEditada.descripcion_categoria" required></textarea>
+                <textarea id="descripcionCategoriaEditada" v-model=" categoriaEditada.descripcion_categoria "
+                    required></textarea>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalEditarCategoria = false" class="btn-cancelar">Cancelar</button>
+                    <button type="button" @click="showModalEditarCategoria = false"
+                        class="btn-cancelar">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Editar Subcategoria -->
-    <div v-if="showModalEditarSubcategoria" class="modal">
+    <div v-if=" showModalEditarSubcategoria " class="modal">
         <div class="modal-content">
             <span @click="showModalEditarSubcategoria = false" class="close">&times;</span>
             <h2>Editar Subcategoría</h2>
-            <form @submit.prevent="guardarSubcategoriaEditada">
+            <form @submit.prevent=" guardarSubcategoriaEditada ">
                 <label for="nombreSubcategoriaEditada">Nombre Subcategoría:</label>
-                <input type="text" id="nombreSubcategoriaEditada" v-model="subcategoriaEditada.nombre_categoria" required>
+                <input type="text" id="nombreSubcategoriaEditada" v-model=" subcategoriaEditada.nombre_categoria "
+                    required>
 
                 <label for="descripcionSubcategoriaEditada">Descripción Subcategoría:</label>
-                <textarea id="descripcionSubcategoriaEditada" v-model="subcategoriaEditada.descripcion_categoria" required></textarea>
+                <textarea id="descripcionSubcategoriaEditada" v-model=" subcategoriaEditada.descripcion_categoria "
+                    required></textarea>
 
                 <label for="categoriaPrincipalEditada">Categoría Principal:</label>
-                <select id="categoriaPrincipalEditada" v-model="subcategoriaEditada.categoria_padre" required>
-                    <option v-for="categoria in categoriasPrincipales" :key="categoria.id" :value="categoria.id">
+                <select id="categoriaPrincipalEditada" v-model=" subcategoriaEditada.categoria_padre " required>
+                    <option v-for=" categoria in categoriasPrincipales " :key=" categoria.id " :value=" categoria.id ">
                         {{ categoria.nombre_categoria }}
                     </option>
                 </select>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalEditarSubcategoria = false" class="btn-cancelar">Cancelar</button>
+                    <button type="button" @click="showModalEditarSubcategoria = false"
+                        class="btn-cancelar">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Confirmación Eliminación -->
-    <div v-if="showConfirmacionEliminacion" class="modal">
+    <div v-if=" showConfirmacionEliminacion " class="modal">
         <div class="modal-content">
             <span @click="showConfirmacionEliminacion = false" class="close">&times;</span>
             <h2>Confirmar Eliminación</h2>
@@ -162,7 +168,7 @@
             </div>
             <p>¿Estás seguro de que deseas eliminar esta categoría?</p>
             <div class="modal-buttons">
-                <button @click="eliminarCategoria(confirmarEliminacionId)" class="btn-aceptar">Eliminar</button>
+                <button @click="eliminarCategoria( confirmarEliminacionId )" class="btn-aceptar">Eliminar</button>
                 <button @click="showConfirmacionEliminacion = false" class="btn-cancelar">Cancelar</button>
             </div>
         </div>
@@ -208,11 +214,11 @@ export default {
     computed: {
         filteredCategorias() {
             let filtered = this.categorias;
-            if (this.searchQuery) {
-                if (this.searchOption === "nombre") {
-                    filtered = filtered.filter((categoria) => categoria.nombre_categoria.toLowerCase().includes(this.searchQuery.toLowerCase()));
-                } else if (this.searchOption === "descripcion") {
-                    filtered = filtered.filter((categoria) => categoria.descripcion_categoria.toLowerCase().includes(this.searchQuery.toLowerCase()));
+            if ( this.searchQuery ) {
+                if ( this.searchOption === "nombre" ) {
+                    filtered = filtered.filter( ( categoria ) => categoria.nombre_categoria.toLowerCase().includes( this.searchQuery.toLowerCase() ) );
+                } else if ( this.searchOption === "descripcion" ) {
+                    filtered = filtered.filter( ( categoria ) => categoria.descripcion_categoria.toLowerCase().includes( this.searchQuery.toLowerCase() ) );
                 }
             }
             return filtered;
@@ -221,23 +227,23 @@ export default {
     methods: {
         async obtenerCategoriasRecursivas() {
             try {
-                const response = await axios.get('/categorias/recursivas');
+                const response = await axios.get( '/categorias/recursivas' );
                 this.categorias = response.data;
-            } catch (error) {
-                console.error('Error al obtener las categorías recursivas:', error);
+            } catch ( error ) {
+                console.error( 'Error al obtener las categorías recursivas:', error );
             }
         },
         async obtenerCategoriasPrincipales() {
             try {
-                const response = await axios.get('/categorias/principales');
+                const response = await axios.get( '/categorias/principales' );
                 this.categoriasPrincipales = response.data;
-                console.log(this.categoriasPrincipales);
-            } catch (error) {
-                console.error('Error al obtener las categorías principales:', error);
+                console.log( this.categoriasPrincipales );
+            } catch ( error ) {
+                console.error( 'Error al obtener las categorías principales:', error );
             }
         },
         buscarCategoria() {
-            console.log("Buscando categoría: ", this.searchQuery);
+            console.log( "Buscando categoría: ", this.searchQuery );
             this.obtenerCategoriasRecursivas();
         },
         agregarCategoria() {
@@ -247,102 +253,102 @@ export default {
             this.obtenerCategoriasPrincipales();
             this.showModalSubcategoria = true;
         },
-        async editarModal(id, categoriaPrincipal) {
+        async editarModal( id, categoriaPrincipal ) {
             try {
-                if (categoriaPrincipal === 1) {
-                    const response = await axios.get(`/categorias/${id}`);
+                if ( categoriaPrincipal === 1 ) {
+                    const response = await axios.get( `/categorias/${ id }` );
                     this.categoriaEditada = response.data;
                     this.showModalEditarCategoria = true;
                 } else {
-                    const response = await axios.get(`/subcategorias/${id}`);
+                    const response = await axios.get( `/subcategorias/${ id }` );
                     this.subcategoriaEditada = response.data;
                     this.obtenerCategoriasPrincipales();
                     this.showModalEditarSubcategoria = true;
                 }
-            } catch (error) {
-                console.error('Error al obtener la categoría o subcategoría:', error);
+            } catch ( error ) {
+                console.error( 'Error al obtener la categoría o subcategoría:', error );
             }
         },
         async guardarCategoriaEditada() {
             try {
-                console.log(this.categoriaEditada);
-                const response = await axios.put(`/categorias/${this.categoriaEditada.id}`, {
+                console.log( this.categoriaEditada );
+                const response = await axios.put( `/categorias/${ this.categoriaEditada.id }`, {
                     nombre_categoria: this.categoriaEditada.nombre_categoria,
                     descripcion_categoria: this.categoriaEditada.descripcion_categoria
-                });
-                console.log(response.data);
+                } );
+                console.log( response.data );
                 this.showModalEditarCategoria = false;
                 this.obtenerCategoriasRecursivas();
-            } catch (error) {
-                console.error('Error al actualizar la categoría:', error);
+            } catch ( error ) {
+                console.error( 'Error al actualizar la categoría:', error );
             }
         },
         async guardarSubcategoriaEditada() {
             try {
-                await axios.put(`/subcategorias/${this.subcategoriaEditada.id}`, {
+                await axios.put( `/subcategorias/${ this.subcategoriaEditada.id }`, {
                     nombre_categoria: this.subcategoriaEditada.nombre_categoria,
                     descripcion_categoria: this.subcategoriaEditada.descripcion_categoria,
                     categoria_padre: this.subcategoriaEditada.categoria_padre
-                });
+                } );
                 this.showModalEditarSubcategoria = false;
                 this.obtenerCategoriasPrincipales();
-            } catch (error) {
-                console.error('Error al actualizar la subcategoría:', error);
+            } catch ( error ) {
+                console.error( 'Error al actualizar la subcategoría:', error );
             }
         },
         async guardarCategoria() {
             try {
-                const response = await axios.post('/categorias/crear', {
+                const response = await axios.post( '/categorias/crear', {
                     nombre_categoria: this.nombreCategoria,
                     descripcion_categoria: this.descripcionCategoria,
-                });
-                console.log(response.data);
-                this.categorias.push(response.data.categoria);
+                } );
+                console.log( response.data );
+                this.categorias.push( response.data.categoria );
                 this.showModalCategoria = false;
                 this.nombreCategoria = '';
                 this.descripcionCategoria = '';
                 this.obtenerCategoriasRecursivas(); // Actualizar la lista de categorías
-            } catch (error) {
-                console.error('Error al guardar la categoría:', error);
+            } catch ( error ) {
+                console.error( 'Error al guardar la categoría:', error );
             }
         },
         async guardarSubcategoria() {
             try {
-                const response = await axios.post('/subcategorias/crear', {
+                const response = await axios.post( '/subcategorias/crear', {
                     nombre_categoria: this.nombreSubcategoria,
                     descripcion_categoria: this.descripcionSubcategoria,
                     categoria_padre: this.categoriaPrincipal,
-                });
-                console.log(response.data);
-                this.categorias.push(response.data.subcategoria);
+                } );
+                console.log( response.data );
+                this.categorias.push( response.data.subcategoria );
                 this.showModalSubcategoria = false;
                 this.nombreSubcategoria = '';
                 this.descripcionSubcategoria = '';
                 this.categoriaPrincipal = '';
                 this.obtenerCategoriasRecursivas();
-            } catch (error) {
-                console.error('Error al guardar la subcategoría:', error);
+            } catch ( error ) {
+                console.error( 'Error al guardar la subcategoría:', error );
             }
         },
-       confirmarEliminacion(id) {
+        confirmarEliminacion( id ) {
             this.confirmarEliminacionId = id;
             this.showConfirmacionEliminacion = true;
         },
-        async eliminarCategoria(id) {
+        async eliminarCategoria( id ) {
             try {
-                const response = await axios.delete(`/categorias/${id}`);
-                console.log(response.data);
+                const response = await axios.delete( `/categorias/${ id }` );
+                console.log( response.data );
                 this.obtenerCategoriasRecursivas();
                 this.showConfirmacionEliminacion = false;
-            } catch (error) {
-                console.error('Error al eliminar la categoría:', error);
-                if (error.response && error.response.data && error.response.data.error) {
-                    alert(error.response.data.error);
+            } catch ( error ) {
+                console.error( 'Error al eliminar la categoría:', error );
+                if ( error.response && error.response.data && error.response.data.error ) {
+                    alert( error.response.data.error );
                 }
             }
         },
-        getNivelClass(nivel) {
-            return `nivel-${nivel}`;
+        getNivelClass( nivel ) {
+            return `nivel-${ nivel }`;
         }
     },
     mounted() {
@@ -480,24 +486,24 @@ export default {
 }
 
 .modal-content label {
-  display: block;
-  margin-bottom: 5px;
+    display: block;
+    margin-bottom: 5px;
 }
 
 .modal-content input,
 .modal-content textarea,
 .modal-content select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 .modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .icono-container {
@@ -512,46 +518,47 @@ export default {
 }
 
 .btn-cancelar {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .btn-aceptar {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
 }
 
 .close:hover,
 .close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 /* Estilos para los diferentes niveles */
 .nivel-1 {
-    background-color: #f5f5f5; /* Gris muy claro */
+    background-color: #f5f5f5;
+    /* Gris muy claro */
     color: black;
 }
 
 .nivel-2 {
-    background-color: #bdbdbd; /* Gris medio */
+    background-color: #bdbdbd;
+    /* Gris medio */
     color: black;
 }
-
 </style>
