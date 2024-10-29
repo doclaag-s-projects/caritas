@@ -23,7 +23,7 @@ const fetchCategoriesWithFiles = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await axios.get( "/categories-with-files" );
+        const response = await axios.get( "/categories-with-files-private" );
         principales.value = response.data.principales || [];
         searchResult.value = principales.value;
     } catch ( err ) {
