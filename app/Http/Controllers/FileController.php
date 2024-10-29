@@ -128,13 +128,13 @@ class FileController extends Controller
             'estado' => 1,
             'usuarios_id' => $userId,
         ]);
-        
+
         // Crear la relación en la tabla archivos_etiquetas con la etiqueta automática
         FileTag::create([
             'archivo_id' => $archivo->id,
             'etiqueta_id' => $etiquetaAutomatica->id,
         ]);
-        
+
         // Crear la relación en la tabla archivos_etiquetas si hay etiquetas adicionales
         $tags = $request->input('tag');
         if ($tags) {
@@ -180,8 +180,8 @@ class FileController extends Controller
     public function list(Request $request)
     {
         $files = File::where('estado', '!=', 1)
-                    ->orderBy('created_at', 'desc')
-                    ->paginate(10);
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         $files->getCollection()->transform(function ($file) {
             return [
@@ -221,39 +221,39 @@ class FileController extends Controller
         if (!$file) {
             return response()->json(['error' => 'Archivo no encontrado'], 404);
         }
-    
+
         $newFileName = $request->input('newFileName');
         if (!$newFileName) {
             return response()->json(['error' => 'Nuevo nombre de archivo no proporcionado'], 400);
         }
-    
+
         $cleanNewFileName = $this->validarNombre(pathinfo($newFileName, PATHINFO_FILENAME));
         $extension = pathinfo($file->nombre_archivo, PATHINFO_EXTENSION);
         $newFileNameWithExtension = $cleanNewFileName . '.' . $extension;
-    
+
         // Obtener la ruta actual del archivo
         $currentFilePath = str_replace('/storage', 'public', $file->ubicacion_archivo);
         $newFilePath = dirname($currentFilePath) . '/' . $newFileNameWithExtension;
-    
+
         // Mover el archivo a la nueva ubicación
         if (Storage::exists($currentFilePath)) {
             Storage::move($currentFilePath, $newFilePath);
         } else {
             return response()->json(['error' => 'Archivo físico no encontrado'], 404);
         }
-    
+
         // Actualizar la ruta del archivo en la base de datos
         $fileUrl = Storage::url($newFilePath);
         $file->update([
             'nombre_archivo' => $newFileNameWithExtension,
             'ubicacion_archivo' => $fileUrl,
         ]);
-    
+
         // Actualizar la etiqueta asociada con el nombre del archivo
         $originalFileName = $this->validarNombre(pathinfo($file->nombre_archivo, PATHINFO_FILENAME));
         $fileTags = FileTag::where('archivo_id', $file->id)->get();
         $tags = Tag::whereIn('id', $fileTags->pluck('etiqueta_id'))->where('automatico', 1)->get();
-    
+
         foreach ($tags as $tag) {
             similar_text($originalFileName, $tag->nombre_etiqueta, $percent);
             if ($percent >= 90) {
@@ -263,7 +263,7 @@ class FileController extends Controller
                 break;
             }
         }
-    
+
         return response()->json(['message' => 'Archivo y etiqueta renombrados correctamente'], 200);
     }
     // Vista de archivos PDF función. 
@@ -293,6 +293,7 @@ class FileController extends Controller
             'files' => $files,
         ]);
     }
+    // JSON arma lista de categorias vista publica
     public function listCategoriesWithFiles()
     {
         // Obtener las categorías principales y sus archivos públicos, sin incluir archivos de subcategorías
@@ -323,6 +324,32 @@ class FileController extends Controller
             'subcategorias' => $subcategorias
         ]);
     }
+    // JSON arma lista de categorias vista privada
+    public function listCategoriesWithFilesPrivate()
+    {
+        // Obtener las categorías principales y sus archivos públicos, sin incluir archivos de subcategorías
+        $categoriasPrincipales = CategoryModel::where('categoria_principal', 1)
+            ->with(['subcategorias' => function ($query) {
+                $query->with('files'); // Eliminar la condición de archivos públicos en las subcategorías
+            }, 'files']) // Eliminar la condición de archivos públicos en las categorías principales
+            ->get();
+
+        // Obtener subcategorías y sus archivos
+        $subcategorias = CategoryModel::where('categoria_principal', 0)
+            ->with('files') // Eliminar la condición de archivos públicos
+            ->get();
+
+        // Filtrar subcategorías que no tienen archivos públicos
+        $subcategorias = $subcategorias->filter(function ($subcategoria) {
+            return $subcategoria->files->isNotEmpty();
+        });
+
+        return response()->json([
+            'principales' => $categoriasPrincipales,
+            'subcategorias' => $subcategorias
+        ]);
+    }
+    // Buscar archivos por nombre o etiqueta
     public function searchByName(Request $request)
     {
         // Validar que el parámetro de búsqueda no esté vacío
