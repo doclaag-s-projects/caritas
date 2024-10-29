@@ -19,6 +19,7 @@ Route::get('/', function () {
 Route::get('/search', [FileController::class, 'searchByName'])->name('search');
 Route::get('/public-files', [FileController::class, 'listPublicFiles'])->name('public.files');
 Route::get('/categories-with-files', [FileController::class, 'listCategoriesWithFiles'])->name('categories.with.files');
+Route::get('/categories-with-files-private', [FileController::class, 'listCategoriesWithFilesPrivate'])->name('categories.with.files.private');
 Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
 
 Route::middleware([
