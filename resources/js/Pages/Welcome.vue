@@ -87,10 +87,10 @@ const closePdfView = () => {
 
 /*/////////////////////////////////////////////////////////////// */
 
-// Función para alternar el sidebar
-const toggleSidebar = () => {
-    sidebarOpen.value = !sidebarOpen.value;
-};
+// // Función para alternar el sidebar
+// const toggleSidebar = () => {
+//     sidebarOpen.value = !sidebarOpen.value;
+// };
 
 // Computed property para obtener archivos aplanados
 const flattenedFiles = computed( () => {
@@ -147,78 +147,105 @@ const previousPage = () => {
 };
 
 
+// Función para alternar el sidebar
+const toggleSidebar = () => {
+    sidebarOpen.value = !sidebarOpen.value;
+};
+
+
 </script>
 
 <template>
     <div class="flex flex-col h-screen overflow-hidden font-sans bg-gray-100">
-        <header class="sticky top-0 flex justify-between items-center p-4 bg-white shadow-md z-50">
-            <div class="flex items-center">
-                <a href="/"> <img src="/img/logo-letters.png" alt="Logo" class="w-10 h-10 mr-4"></a>
-                <h1>Biblioteca Publica</h1>
-            </div>
-            <Link :href=" route( 'login' ) "
-                class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            <LogIn class="w-5 h-5 mr-2" />
-            Iniciar Sesión
-            </Link>
-        </header>
+    <header class="sticky top-0 flex justify-between items-center p-4 bg-white shadow-md z-50">
+        <div class="flex items-center space-x-4">
+        <!-- Botón hamburguesa -->
+            <button @click="toggleSidebar"
+                class="md:hidden rounded-full bg-blue-600 text-white p-2 rounded focus:outline-none">
+            <svg v-if="!sidebarOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            </button>
+
+        <!-- Logo e ícono -->
+        <a href="/">
+            <img src="/img/logo-letters.png" alt="Logo" class="w-10 h-10">
+        </a>
+        <h1>Biblioteca Publica</h1>
+    </div>
+
+    <!-- Botón de inicio de sesión -->
+    <Link :href="route('login')"
+        class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+        <LogIn class="w-5 h-5 mr-2" />
+        Iniciar Sesión
+    </Link>
+</header>
+
 
         <div class="flex flex-1 overflow-hidden">
-            <aside
-                :class=" [ 'w-80 bg-white shadow-lg transition-all duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full' ] ">
-                <div class="h-full overflow-y-auto overflow-x-hidden">
-                    <div class="p-4">
-                        <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
-                        <div v-for="( category, index) in searchResult" :key=" index " class="mb-2">
-                            <button @click="toggleCategory( category )"
-                                class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
-                                <div class="flex items-center">
-                                    <img src="/img/folder.svg" alt="folder" class="w-5 h-5 mr-2" />
-                                    <span class="text-gray-700 truncate">{{ category.nombre_categoria }}</span>
-                                </div>
-                                <ChevronDown v-if=" !category.expanded " class="w-5 h-5 text-gray-500" />
-                                <ChevronUp v-else class="w-5 h-5 text-gray-500" />
-                            </button>
-                            <ul v-if=" category.expanded " class="ml-4 mt-2">
-                                <!-- Archivos en la categoría -->
-                                <li v-for=" file in category.files " :key=" file.id ">
-                                    <button @click.prevent="previewPdf( file.id )"
-                                        class="text-blue-500 flex items-center w-full">
-                                        <FileText class="w-4 h-4 mr-2" />
-                                        <span class="truncate">{{ file.nombre_archivo }}</span>
-                                    </button>
-                                </li>
-                            </ul>
 
-                            <div v-if=" category.expanded " class="ml-4 mt-2">
-                                <div v-for="( subcategory, subIndex) in category.subcategorias" :key=" subIndex "
-                                    class="mb-2">
-                                    <button @click="toggleSubcategory( subcategory )"
-                                        class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
-                                        <div class="flex items-center">
-                                            <img src="/img/corner-down-right.svg" alt="corner-down-right"
-                                                class="w-4 h-4 mr-2" />
-                                            <span class="text-gray-600 truncate">{{ subcategory.nombre_categoria
-                                                }}</span>
-                                        </div>
-                                        <ChevronDown v-if=" !subcategory.expanded " class="w-4 h-4 text-gray-400" />
-                                        <ChevronUp v-else class="w-4 h-4 text-gray-400" />
-                                    </button>
-                                    <ul v-if=" subcategory.expanded " class="ml-4 mt-2">
-                                        <li v-for=" file in subcategory.files " :key=" file.id ">
-                                            <button @click.prevent="previewPdf( file.id )"
-                                                class="text-blue-500 flex items-center w-full">
-                                                <FileText class="w-4 h-4 mr-2" />
-                                                <span class="truncate">{{ file.nombre_archivo }}</span>
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        
+
+    <!-- Aside para menú -->
+    <aside :class="['bg-white shadow-lg transition-all duration-300 ease-in-out', 
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full', 
+                    'w-80 md:w-64 lg:w-80 fixed md:relative z-50 md:z-auto flex-shrink-0']">
+        <div class="h-full overflow-y-auto overflow-x-hidden">
+        <!-- Contenido del menú -->
+        <div class="p-4">
+            <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
+            <div v-for="(category, index) in searchResult" :key="index" class="mb-2">
+            <button @click="toggleCategory(category)"
+                    class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
+                <div class="flex items-center">
+                <img src="/img/folder.svg" alt="folder" class="w-5 h-5 mr-2" />
+                <span class="text-gray-700 truncate">{{ category.nombre_categoria }}</span>
                 </div>
-            </aside>
+                <ChevronDown v-if="!category.expanded" class="w-5 h-5 text-gray-500" />
+                <ChevronUp v-else class="w-5 h-5 text-gray-500" />
+            </button>
+            <ul v-if="category.expanded" class="ml-4 mt-2">
+                <!-- Archivos en la categoría -->
+                <li v-for="file in category.files" :key="file.id">
+                <button @click.prevent="previewPdf(file.id)"
+                        class="text-blue-500 flex items-center w-full" :title="file.nombre_archivo">
+                    <FileText class="w-4 h-4 mr-2" />
+                    <span class="truncate">{{ file.nombre_archivo }}</span>
+            </button>
+                </li>
+            </ul>
+            <div v-if="category.expanded" class="ml-4 mt-2">
+                <div v-for="(subcategory, subIndex) in category.subcategorias" :key="subIndex" class="mb-2">
+                <button @click="toggleSubcategory(subcategory)"
+                        class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
+                    <div class="flex items-center">
+                    <img src="/img/corner-down-right.svg" alt="corner-down-right" class="w-4 h-4 mr-2" />
+                    <span class="text-gray-600 truncate">{{ subcategory.nombre_categoria }}</span>
+                    </div>
+                    <ChevronDown v-if="!subcategory.expanded" class="w-4 h-4 text-gray-400" />
+                    <ChevronUp v-else class="w-4 h-4 text-gray-400" />
+                </button>
+                <ul v-if="subcategory.expanded" class="ml-4 mt-2">
+                    <li v-for="file in subcategory.files" :key="file.id">
+                    <button @click.prevent="previewPdf(file.id)"
+                            class="text-blue-500 flex items-center w-full" :title="file.nombre_archivo">
+                        <FileText class="w-4 h-4 mr-2" />
+                        <span class="truncate">{{ file.nombre_archivo }}</span>
+                    </button>
+                    </li>
+                </ul>
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>
+    </aside>
 
 
             <main class="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100">
@@ -260,7 +287,7 @@ const previousPage = () => {
                             class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                             <div class="p-6">
                                 <FileText class="w-10 h-10 text-blue-600 mb-4" />
-                                <h3 class="font-semibold text-gray-800 text-lg mb-3 truncate">{{ file.nombre_archivo }}
+                                <h3 class="font-semibold text-gray-800 text-lg mb-3 truncate":title="file.nombre_archivo" >{{ file.nombre_archivo }}
                                 </h3>
                                 <a href="#" @click.prevent="previewPdf( file.id )"
                                     class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200">
@@ -285,19 +312,19 @@ const previousPage = () => {
                 </div>
                 <div v-if="pdfVisible" class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
     <div class="relative w-11/12 h-5/6 bg-white rounded-lg overflow-hidden shadow-2xl">
-      <button
+    <button
         @click="closePdfView"
         class="absolute top-4 right-6 text-red-400 hover:text-red-600 transition-colors duration-200 focus:outline-none"
         aria-label="Close PDF viewer"
-      >
+    >
         <XCircle class="w-11 h-11" />
-      </button>
-      <iframe
+    </button>
+    <iframe
         :src="pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0'"
         class="w-full h-full"
         title="PDF Viewer"
-      >
-      </iframe>
+    >
+    </iframe>
     </div>
   </div>
             </main>
