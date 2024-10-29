@@ -156,9 +156,7 @@ const toggleSidebar = () => {
 </script>
 
 <template>
-    <div class="flex flex-col h-screen overflow-hidden font-sans bg-gray-100">
-    <header class="sticky top-0 flex justify-between items-center p-4 bg-white shadow-md z-50">
-        <div class="flex items-center space-x-4">
+    <div class="flex flex-col h-screen overflow-hidden font-sans bg-gray-100">        <div class="flex items-center space-x-4">
         <!-- Botón hamburguesa -->
             <button @click="toggleSidebar"
                 class="md:hidden rounded-full bg-blue-600 text-white p-2 rounded focus:outline-none">
@@ -174,14 +172,7 @@ const toggleSidebar = () => {
 
 
     </div>
-
-</header>
-
-
         <div class="flex flex-1 overflow-hidden">
-
-        
-
     <!-- Aside para menú -->
     <aside :class="['bg-white shadow-lg transition-all duration-300 ease-in-out', 
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full', 
@@ -189,7 +180,7 @@ const toggleSidebar = () => {
         <div class="h-full overflow-y-auto overflow-x-hidden">
         <!-- Contenido del menú -->
         <div class="p-4">
-            <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos públicos</h2>
+            <h2 class="text-lg font-bold mb-4 text-gray-800">Documentos privados</h2>
             <div v-for="(category, index) in searchResult" :key="index" class="mb-2">
             <button @click="toggleCategory(category)"
                     class="flex justify-between items-center w-full p-2 text-left rounded transition-colors duration-200 hover:bg-gray-100">
