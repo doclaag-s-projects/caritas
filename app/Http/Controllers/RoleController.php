@@ -21,26 +21,28 @@ class RoleController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
+            'estado' => 'required|boolean', // Valida que estado sea 0 o 1
         ]);
-
-        $role = Role::create($request->only('nombre'));
-
+    
+        $role = Role::create($request->only('nombre', 'estado'));
+    
         return response()->json($role, 201);
     }
-
+    
     public function show(Role $role)
     {
         return response()->json($role);
     }
-
+    
     public function update(Request $request, Role $role)
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
+            'estado' => 'required|boolean', // Valida que estado sea 0 o 1
         ]);
-
-        $role->update($request->only('nombre'));
-
+    
+        $role->update($request->only('nombre', 'estado'));
+    
         return response()->json($role);
     }
 
