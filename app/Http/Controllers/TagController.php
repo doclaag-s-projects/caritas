@@ -11,10 +11,10 @@ class TagController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        $tags = Tag::all();
-        return response()->json($tags);
-    }
+{
+    $tags = Tag::where('automatico', '!=', 1)->get();
+    return response()->json($tags);
+}
 
     /**
      * Store a newly created resource in storage.

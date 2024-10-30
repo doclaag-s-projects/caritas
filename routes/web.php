@@ -18,6 +18,12 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/search', [FileController::class, 'searchByName'])->name('search');
+Route::get('/public-files', [FileController::class, 'listPublicFiles'])->name('public.files');
+Route::get('/categories-with-files', [FileController::class, 'listCategoriesWithFiles'])->name('categories.with.files');
+Route::get('/categories-with-files-private', [FileController::class, 'listCategoriesWithFilesPrivate'])->name('categories.with.files.private');
+Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -33,7 +39,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/files/upload', [FileController::class, 'upload']);
     Route::delete('/files/{id}', [FileController::class, 'delete'])->name('files.delete');
     Route::put('/files/{id}/rename', [FileController::class, 'rename'])->name('files.rename');
-    Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
     Route::get('/files/list', [FileController::class, 'list'])->name('list');
     Route::get('/files/upload', function () {return Inertia::render('Files/Upload');})->name('files');
 });
