@@ -1,6 +1,6 @@
 <template>
     <div>
-        <button @click=" openModal " class="p-1 rounded-full hover:bg-gray-200">
+        <button @click=" openModal " :disabled="!canEdit" class="p-1 rounded-full hover:bg-gray-200">
             <img src="/img/edit.svg" alt="Edit" class="w-6 h-6">
         </button>
 

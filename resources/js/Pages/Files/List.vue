@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import { usePage } from "@inertiajs/vue3";
 import AppLayout from '@/Layouts/AppLayout.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -17,6 +18,14 @@ const error = ref(null);
 const searchTerm = ref('');
 const displayingToken = ref(false);
 const previewUrl = ref('');
+const { props } = usePage();
+const user = props.auth.user;
+const showPermissionMessage = ref(false);
+
+
+const canEdit = computed(() => {
+    return user.Editar === 1;
+});
 
 const fetchFiles = async (page = 1) => {
     loading.value = true;

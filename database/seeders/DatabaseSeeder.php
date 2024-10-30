@@ -26,8 +26,8 @@ class DatabaseSeeder extends Seeder
         $userId = User::factory()->create([
             'name' => 'TEST',
             'email' => 'test@com',
-            'gender' => 'male', // o 'female' según corresponda
-            'password' => Hash::make('1234'), // Asegúrate de usar Hash::make para encriptar la contraseña
+            'gender' => 'male',
+            'password' => Hash::make('1234'), 
             'Crear' => true,
             'Eliminar' => true,
             'Editar' => true,

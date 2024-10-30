@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
+import { usePage } from "@inertiajs/vue3";
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CustomTag from '@/Components/CustomTag.vue';
 import DialogModal from '@/Components/DialogModal.vue';
@@ -37,6 +38,14 @@ const selectedCategoria = ref(null);
 const selectedSubcategoria = ref(null);
 const userId = ref(null);
 const newFileName = ref(''); // Nueva referencia para el nuevo nombre del archivo
+const { props } = usePage();
+const user = props.auth.user;
+const showPermissionMessage = ref(false);
+
+
+const canCreate = computed(() => {
+    return user.Crear === 1;
+});
 
 const updateSelectedTags = (newTags) => {
     selectedTags.value = newTags;
@@ -264,9 +273,12 @@ const handleSubcategoryUpdated = async () => {
                                                 {{ categoria.nombre_categoria }}
                                             </option>
                                         </select>
-                                        <button @click=" openCategoryModal "
+                                        <button
+                                            @click="openCategoryModal"
+                                            :disabled="!canCreate"
                                             class="p-2 bg-gray-100 rounded-md hover:bg-gray-200 transition duration-300"
-                                            aria-label="Agregar nueva categoría">
+                                            aria-label="Agregar nueva categoría"
+                                        >
                                             <img src="/img/library-plus.svg" class="w-6 h-6 text-gray-600"
                                                 alt="Agregar categoría" />
                                         </button>
@@ -288,6 +300,7 @@ const handleSubcategoryUpdated = async () => {
                                             </option>
                                         </select>
                                         <button @click=" openSubcategoryModal "
+                                            :disabled="!canCreate"
                                             class="p-2 bg-gray-100 rounded-md hover:bg-gray-200 transition duration-300"
                                             aria-label="Agregar nueva subcategoría">
                                             <img src="/img/library-plus.svg" class="w-6 h-6 text-gray-600"
@@ -309,6 +322,7 @@ const handleSubcategoryUpdated = async () => {
                                                 @update-selected-items=" updateSelectedTags " :reset=" resetTags " />
                                         </div>
                                         <button @click=" openModal "
+                                            :disabled="!canCreate"
                                             class="p-2 bg-gray-100 rounded-md hover:bg-gray-200 transition duration-300"
                                             aria-label="Agregar nueva etiqueta">
                                             <img src="/img/library-plus.svg" class="w-6 h-6 text-gray-600"
@@ -318,10 +332,18 @@ const handleSubcategoryUpdated = async () => {
                                 </div>
 
                                 <!-- Botón para cargar archivo -->
-                                <PrimaryButton @click=" validateAndUploadFile "
-                                    class="w-full justify-center py-3 text-lg focus:ring-offset-2">
+                                <PrimaryButton
+                                    @click="validateAndUploadFile"
+                                    :disabled="!canCreate"
+                                    @mouseover="showPermissionMessage = !canCreate"
+                                    @mouseleave="showPermissionMessage = false"
+                                    class="w-full justify-center py-3 text-lg focus:ring-offset-2"
+                                >
                                     Cargar Archivo
                                 </PrimaryButton>
+                                <p v-if="showPermissionMessage" class="text-red-500 mt-2">
+                                    El usuario no tiene permisos para crear.
+                                </p>
                             </div>
                         </div>
                     </div>
