@@ -8,6 +8,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ViewController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -94,3 +95,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
     Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
 });
+
+// Ruta para vistas
+Route::get('/views', [ViewController::class, 'Index'])->name('views.index');

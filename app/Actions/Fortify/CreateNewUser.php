@@ -28,6 +28,9 @@ class CreateNewUser implements CreatesNewUsers
             'roles' => ['required', 'array'],
             'roles.*' => ['exists:roles,id'],
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
+            'Crear' => ['required', 'boolean'],
+            'Eliminar' => ['required', 'boolean'],
+            'Editar' => ['required', 'boolean'],
         ])->validate();
 
         $user = User::create([
@@ -35,6 +38,9 @@ class CreateNewUser implements CreatesNewUsers
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
             'gender' => $input['gender'],
+            'Crear' => $input['Crear'],
+            'Eliminar' => $input['Eliminar'],
+            'Editar' => $input['Editar'],
         ]);
         if (is_array($input['roles'])) {
             foreach ($input['roles'] as $roleId) {
