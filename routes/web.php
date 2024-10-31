@@ -9,6 +9,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ViewController;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -97,4 +98,8 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Ruta para vistas
-Route::get('/views', [ViewController::class, 'Index'])->name('views.index');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/views', [ViewController::class, 'Index'])->name('views.index');
+    Route::get('/usersend', [UserController::class, 'show']);
+    Route::put('/user/{id}', [UserController::class, 'update']);
+});
