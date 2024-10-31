@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\UsuarioRol;
 
 class UserController extends Controller
 {
@@ -31,7 +32,20 @@ class UserController extends Controller
             'Editar' => 'required|boolean',
         ]);
 
+        // Actualizar la información del usuario
         $user->update($validatedData);
+
+        // Actualizar los roles del usuario
+        UsuarioRol::where('usuario_id', $id)->delete();
+        foreach ($request->roles as $roleId) {
+            UsuarioRol::create([
+                'usuario_id' => $id,
+                'rol_id' => $roleId,
+            ]);
+        }
+
+        // Recargar el usuario con los roles actualizados
+        $user->load('usuariosRoles.role');
 
         return response()->json($user);
     }
