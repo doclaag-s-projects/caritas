@@ -6,10 +6,10 @@ use App\Models\User;
 
 class UserController extends Controller
 {
-    // Método para obtener todos los usuarios
+    // Método para obtener todos los usuarios con sus roles
     public function show()
     {
-        $users = User::all();
+        $users = User::with('usuariosRoles.role')->get();
         return response()->json($users);
     }
 
