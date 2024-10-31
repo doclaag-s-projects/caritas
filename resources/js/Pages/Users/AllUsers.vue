@@ -6,10 +6,18 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 const views = ref( [] );
 const roles = ref( [] );
+const users = ref( [] );
 
 // Obtener datos
 onMounted( async () => {
     try {
+
+        const userResponse = await axios.get( '/usersend', {
+            headers: { 'Accept': 'application/json' },
+            withCredentials: true
+        } );
+
+
         const viewsResponse = await axios.get( '/views', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
@@ -19,6 +27,23 @@ onMounted( async () => {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
         } );
+
+        users.value = userResponse.data.map( user => ( {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            gender: user.gender,
+            roles: user.usuarios_roles.map( usuarioRol => ( {
+                name: usuarioRol.role.nombre
+            } ) ),
+            permissions: [
+                { crear: 'CREAR', estado: user.Crear },
+                { editar: 'EDITAR', estado: user.Editar },
+                { eliminar: 'ELIMINAR', estado: user.Eliminar }
+            ],
+        } ) );
+
+        console.log( users.value );
 
         roles.value = rolesResponse.data.map( role => ( {
             id: role.id,
@@ -38,35 +63,6 @@ onMounted( async () => {
     }
 } );
 
-
-
-// Mock Data
-const users = ref( [
-    {
-        id: 1,
-        name: 'Juan Pérez',
-        email: 'juan@example.com',
-        gender: 'Masculino',
-        roles: [ { name: 'Admin' } ],
-        permissions: [ 1, 2, 3 ]
-    },
-    {
-        id: 2,
-        name: 'María García',
-        email: 'maria@example.com',
-        gender: 'Femenino',
-        roles: [ { name: 'Editor' } ],
-        permissions: [ 1, 2 ]
-    },
-    {
-        id: 3,
-        name: 'Carlos López',
-        email: 'carlos@example.com',
-        gender: 'Masculino',
-        roles: [ { name: 'Usuario' } ],
-        permissions: [ 1 ]
-    }
-] );
 
 
 const basicPermissions = [
@@ -337,14 +333,14 @@ const openCreateRoleModal = () => {
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th v-for="  header in tableHeaders  " :key=" header "
+                                    <th v-for="   header in tableHeaders   " :key=" header "
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         {{ header }}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="  user in paginatedUsers  " :key=" user.id " class="hover:bg-gray-50">
+                                <tr v-for="   user in paginatedUsers   " :key=" user.id " class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
@@ -406,7 +402,7 @@ const openCreateRoleModal = () => {
                             </div>
                             <div>
                                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    <button v-for="  page in totalPages  " :key=" page " @click="currentPage = page"
+                                    <button v-for="   page in totalPages   " :key=" page " @click="currentPage = page"
                                         class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium"
                                         :class=" [
                                             currentPage === page
@@ -436,7 +432,7 @@ const openCreateRoleModal = () => {
                         </div>
                         <div class="p-6">
                             <div class="space-y-4">
-                                <div v-for="  role in roles  " :key=" role.id " class="p-4 bg-gray-50 rounded-lg">
+                                <div v-for="   role in roles   " :key=" role.id " class="p-4 bg-gray-50 rounded-lg">
                                     <div class="flex justify-between items-center mb-2">
                                         <h3 class="text-lg font-medium text-gray-900">{{ role.name }}</h3>
                                         <button @click="editRole( role )" class="text-blue-600 hover:text-blue-900">
@@ -444,7 +440,7 @@ const openCreateRoleModal = () => {
                                         </button>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span v-for="  permission in role.permissions  " :key=" permission.id "
+                                        <span v-for="   permission in role.permissions   " :key=" permission.id "
                                             class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                                             {{ permission.name }}
                                         </span>
@@ -461,7 +457,7 @@ const openCreateRoleModal = () => {
                         </div>
                         <div class="p-6">
                             <div class="grid grid-cols-2 gap-4">
-                                <div v-for=" view in views " :key=" view.id "
+                                <div v-for="  view in views  " :key=" view.id "
                                     class="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-700">{{ view.name }}</span>
                                     <span
@@ -546,7 +542,7 @@ const openCreateRoleModal = () => {
                                         <select id="role" v-model=" userForm.roleId " required
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                             <option value="">Seleccionar rol</option>
-                                            <option v-for="  role in roles  " :key=" role.id " :value=" role.id ">
+                                            <option v-for="   role in roles   " :key=" role.id " :value=" role.id ">
                                                 {{ role.name }}
                                             </option>
                                         </select>
@@ -557,7 +553,7 @@ const openCreateRoleModal = () => {
                                 <div class="mt-6">
                                     <h4 class="text-sm font-medium text-gray-700 mb-4">Permisos del Usuario</h4>
                                     <div class="space-y-4">
-                                        <div v-for="  permission in basicPermissions  " :key=" permission.id "
+                                        <div v-for="   permission in basicPermissions   " :key=" permission.id "
                                             class="flex items-center  justify-between p-3 bg-gray-50 rounded-lg">
                                             <span class="text-sm font-medium text-gray-700">{{ permission.name }}</span>
                                             <label class="relative inline-flex items-center cursor-pointer">
@@ -613,7 +609,7 @@ const openCreateRoleModal = () => {
                                 <div class="mt-6">
                                     <h4 class="text-sm font-medium text-gray-700 mb-4">Vistas Accesibles</h4>
                                     <div class="space-y-4">
-                                        <div v-for="  view in views  " :key=" view.id "
+                                        <div v-for="   view in views   " :key=" view.id "
                                             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <span class="text-sm font-medium text-gray-700">{{ view.name }}</span>
                                             <label class="relative inline-flex items-center cursor-pointer">
