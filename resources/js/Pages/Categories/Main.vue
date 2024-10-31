@@ -7,6 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import ToastNotification from '@/Components/ToastNotification.vue';
 import CustomTagGreen from '@/Components/CustomTagGreen.vue';
 import Search from '@/Pages/Categories/search.vue'; // Importa el nuevo componente
+import { usePage } from "@inertiajs/vue3";
 
 const principales = ref([]);
 const secundarias = ref([]);
@@ -22,6 +23,17 @@ const descripcionEtiqueta = ref('');
 const etiquetaFormError = ref(null);
 const selectedEtiqueta = ref(null);
 
+const { props } = usePage();
+const user = props.auth.user;
+
+const canCreate = computed(() => {
+    return user.Crear === 1;
+});
+
+const canEdit = computed(() => {
+    return user.Editar === 1;
+});
+
 const activeTab = ref('busqueda'); // Define la propiedad activeTab
 const selectedRuta = ref(null);
 
@@ -31,18 +43,18 @@ const successMessage = ref('');
 const displayingToken = ref(false);
 
 const notification = ref({
-  visible: false,
-  message: '',
-  type: 'success'
+    visible: false,
+    message: '',
+    type: 'success'
 });
 
 const showNotification = (message, type = 'success') => {
-  notification.value.message = message;
-  notification.value.type = type;
-  notification.value.visible = true;
-  setTimeout(() => {
-    notification.value.visible = false;
-  }, 3000);
+    notification.value.message = message;
+    notification.value.type = type;
+    notification.value.visible = true;
+    setTimeout(() => {
+        notification.value.visible = false;
+    }, 3000);
 };
 
 onMounted(async () => {
@@ -185,8 +197,10 @@ const updateSelectedTags = (newSelectedTags) => {
     <AppLayout title="Categories">
         <template #header>
             <nav class="flex space-x-4 mt-4">
-                <button @click="activeTab = 'busqueda'" :class="{'text-blue-500': activeTab === 'busqueda'}">Principal</button>
-                <button @click="activeTab = 'etiquetas'" :class="{'text-blue-500': activeTab === 'etiquetas'}">Etiquetas</button>
+                <button @click="activeTab = 'busqueda'"
+                    :class="{ 'text-blue-500': activeTab === 'busqueda' }">Principal</button>
+                <button @click="activeTab = 'etiquetas'"
+                    :class="{ 'text-blue-500': activeTab === 'etiquetas' }">Etiquetas</button>
             </nav>
         </template>
 
@@ -202,33 +216,41 @@ const updateSelectedTags = (newSelectedTags) => {
                     </div>
 
                     <div v-else>
-                         <!-- Tab Búsqueda -->
-                         <div v-if="activeTab === 'busqueda'">
+                        <!-- Tab Búsqueda -->
+                        <div v-if="activeTab === 'busqueda'">
                             <Search />
                         </div>
 
                         <!-- Tab Rutas -->
                         <div v-if="activeTab === 'rutas'">
                             <h3 class="font-semibold text-lg text-gray-800 mb-4">Rutas</h3>
-                            
-                            <form @submit.prevent="submitForm" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+
+                            <form @submit.prevent="submitForm"
+                                class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
                                 <div class="mb-4">
                                     <label for="nombre_categoria" class="block text-gray-700">Nombre de la Ruta</label>
-                                    <input type="text" id="nombre_categoria" v-model="nombreCategoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                                    <input type="text" id="nombre_categoria" v-model="nombreCategoria"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                                 </div>
                                 <div class="mb-4">
                                     <label for="descripcion_categoria" class="block text-gray-700">Descripción</label>
-                                    <textarea id="descripcion_categoria" v-model="descripcionCategoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+                                    <textarea id="descripcion_categoria" v-model="descripcionCategoria"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required></textarea>
                                 </div>
 
-                                <div class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded max-h-64 overflow-y-auto">
+                                <div
+                                    class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded max-h-64 overflow-y-auto">
                                     <h3 class="font-semibold text-lg text-gray-800 mb-4">Rutas Creadas</h3>
                                     <div v-if="principales.length === 0" class="text-center text-gray-500 mb-4">
                                         No hay rutas disponibles.
                                     </div>
                                     <div v-else>
-                                        <div v-for="category in principales.slice(0, 5)" :key="category.id" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded cursor-pointer" @click="selectRuta(category)">
-                                            <h3 class="font-semibold text-lg text-gray-800">{{ category.nombre_categoria }}</h3>
+                                        <div v-for="category in principales.slice(0, 5)" :key="category.id"
+                                            class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded cursor-pointer"
+                                            @click="selectRuta(category)">
+                                            <h3 class="font-semibold text-lg text-gray-800">{{ category.nombre_categoria
+                                                }}</h3>
                                             <p class="text-gray-700">{{ category.descripcion_categoria }}</p>
                                         </div>
                                     </div>
@@ -249,30 +271,38 @@ const updateSelectedTags = (newSelectedTags) => {
                         <!-- Tab Etiquetas -->
                         <div v-if="activeTab === 'etiquetas'">
                             <h3 class="font-semibold text-lg text-gray-800 mb-4">Etiquetas</h3>
-                            
-                            <form @submit.prevent="submitForm" class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
+
+                            <form @submit.prevent="submitForm"
+                                class="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
                                 <div class="mb-4">
-                                    <label for="nombre_etiqueta" class="block text-gray-700">Nombre de la Etiqueta</label>
-                                    <input type="text" id="nombre_etiqueta" v-model="nombreEtiqueta" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                                    <label for="nombre_etiqueta" class="block text-gray-700">Nombre de la
+                                        Etiqueta</label>
+                                    <input type="text" id="nombre_etiqueta" v-model="nombreEtiqueta"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                                 </div>
                                 <div class="mb-4">
                                     <label for="descripcion_etiqueta" class="block text-gray-700">Descripción</label>
-                                    <textarea id="descripcion_etiqueta" v-model="descripcionEtiqueta" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required></textarea>
+                                    <textarea id="descripcion_etiqueta" v-model="descripcionEtiqueta"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required></textarea>
                                 </div>
                                 <div class="flex space-x-4">
-                                    <PrimaryButton type="submit">
+                                    <PrimaryButton type="submit" v-if="canCreate">
                                         {{ selectedEtiqueta ? 'Actualizar Etiqueta' : 'Crear Etiqueta' }}
                                     </PrimaryButton>
                                     <PrimaryButton type="button" @click="clearEtiquetaForm">
                                         Limpiar Etiqueta
                                     </PrimaryButton>
-                                    <PrimaryButton type="button" @click="deactivateEtiqueta(selectedEtiqueta)" v-if="selectedEtiqueta">
+                                    <PrimaryButton type="button" @click="deactivateEtiqueta(selectedEtiqueta)"
+                                        v-if="selectedEtiqueta && canEdit">
                                         Desactivar Etiqueta
                                     </PrimaryButton>
                                 </div>
 
                                 <div class="mt-4">
-                                    <CustomTagGreen :label="'Etiquetas'" :items="etiquetas" :selected-items="selectedTags" @update-selected-items="updateSelectedTags" :reset="resetTags" />
+                                    <CustomTagGreen :label="'Etiquetas'" :items="etiquetas"
+                                        :selected-items="selectedTags" @update-selected-items="updateSelectedTags"
+                                        :reset="resetTags" />
                                 </div>
 
                                 <div v-if="etiquetaFormError" class="text-red-500 text-center mb-4">
@@ -284,6 +314,7 @@ const updateSelectedTags = (newSelectedTags) => {
                 </div>
             </div>
         </div>
-        <ToastNotification v-if="notification.visible" :message="notification.message" :type="notification.type" @close="notification.visible = false" />
+        <ToastNotification v-if="notification.visible" :message="notification.message" :type="notification.type"
+            @close="notification.visible = false" />
     </AppLayout>
 </template>

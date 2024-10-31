@@ -1,22 +1,22 @@
 <template>
     <div class="categoria-container">
         <div class="buscador">
-            <input type="text" placeholder="Escriba aqui para buscar una categoría..." v-model=" searchQuery " />
-            <select v-model=" searchOption ">
+            <input type="text" placeholder="Escriba aqui para buscar una categoría..." v-model="searchQuery" />
+            <select v-model="searchOption">
                 <option value="nombre">Nombre</option>
                 <option value="descripcion">Descripción</option>
             </select>
-            <button @click=" buscarCategoria ">
+            <button @click="buscarCategoria">
                 <img src="/img/searchCategories.svg" alt="Search Categories" class="w-8 h-8" />
             </button>
         </div>
 
         <div class="add-buttons">
-            <button @click=" agregarCategoria " class="btn-agregar">
+            <button @click="agregarCategoria" class="btn-agregar" :disabled="!canCreate">
                 <img src="/img/plus.svg" alt="Plus" class="w-8 h-8" />
                 Añadir Categoría
             </button>
-            <button @click=" agregarSubcategoria " class="btn-agregar">
+            <button @click="agregarSubcategoria" class="btn-agregar" :disabled="!canCreate">
                 <img src="/img/plus.svg" alt="Plus" class="w-8 h-8" />
                 Añadir Subcategoría
             </button>
@@ -35,7 +35,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for=" categoria in filteredCategorias " :key=" categoria.id " :class=" getNivelClass( categoria.nivel ) ">
+                <tr v-for="categoria in filteredCategorias" :key="categoria.id" :class="getNivelClass(categoria.nivel)">
                     <td class="hidden-column">{{ categoria.id }}</td>
                     <td>
                         <strong>{{ categoria.nombre_categoria }}</strong><br>
@@ -46,11 +46,10 @@
                     <td>{{ categoria.full_path }}</td>
                     <td class="hidden-column">{{ categoria.nivel }}</td>
                     <td>
-                        <button @click="editarModal( categoria.id, categoria.categoria_principal )"
-                            class="btn-accion editar">
+                        <button @click="editarModal(categoria.id, categoria.categoria_principal)" class="btn-accion editar" :disabled="!canEdit">
                             <img src="/img/edit.svg" alt="Edit" class="w-8 h-8" />
                         </button>
-                        <button @click="confirmarEliminacion( categoria.id )" class="btn-accion eliminar">
+                        <button @click="confirmarEliminacion(categoria.id)" class="btn-accion eliminar" :disabled="!canDelete">
                             <img src="/img/trash.svg" alt="Trash" class="w-8 h-8" />
                         </button>
                     </td>
@@ -60,16 +59,16 @@
     </div>
 
     <!-- Modal Crear Categoria -->
-    <div v-if=" showModalCategoria " class="modal">
+    <div v-if="showModalCategoria" class="modal">
         <div class="modal-content">
             <span @click="showModalCategoria = false" class="close">&times;</span>
             <h2>Crear Nueva Categoría</h2>
-            <form @submit.prevent=" guardarCategoria ">
+            <form @submit.prevent="guardarCategoria">
                 <label for="nombreCategoria">Nombre Categoría:</label>
-                <input type="text" id="nombreCategoria" v-model=" nombreCategoria " required>
+                <input type="text" id="nombreCategoria" v-model="nombreCategoria" required>
 
                 <label for="descripcionCategoria">Descripción Categoría:</label>
-                <textarea id="descripcionCategoria" v-model=" descripcionCategoria " required></textarea>
+                <textarea id="descripcionCategoria" v-model="descripcionCategoria" required></textarea>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-aceptar">Aceptar</button>
@@ -80,20 +79,20 @@
     </div>
 
     <!-- Modal Crear Subcategoria -->
-    <div v-if=" showModalSubcategoria " class="modal">
+    <div v-if="showModalSubcategoria" class="modal">
         <div class="modal-content">
             <span @click="showModalSubcategoria = false" class="close">&times;</span>
             <h2>Crear Nueva Subcategoría</h2>
-            <form @submit.prevent=" guardarSubcategoria ">
+            <form @submit.prevent="guardarSubcategoria">
                 <label for="nombreSubcategoria">Nombre Subcategoría:</label>
-                <input type="text" id="nombreSubcategoria" v-model=" nombreSubcategoria " required>
+                <input type="text" id="nombreSubcategoria" v-model="nombreSubcategoria" required>
 
                 <label for="descripcionSubcategoria">Descripción Subcategoría:</label>
-                <textarea id="descripcionSubcategoria" v-model=" descripcionSubcategoria " required></textarea>
+                <textarea id="descripcionSubcategoria" v-model="descripcionSubcategoria" required></textarea>
 
                 <label for="categoriaPrincipal">Categoría Principal:</label>
-                <select id="categoriaPrincipal" v-model=" categoriaPrincipal " required>
-                    <option v-for=" categoria in categoriasPrincipales " :key=" categoria.id " :value=" categoria.id ">
+                <select id="categoriaPrincipal" v-model="categoriaPrincipal" required>
+                    <option v-for="categoria in categoriasPrincipales" :key="categoria.id" :value="categoria.id">
                         {{ categoria.nombre_categoria }}
                     </option>
                 </select>
@@ -107,59 +106,54 @@
     </div>
 
     <!-- Modal Editar Categoria -->
-    <div v-if=" showModalEditarCategoria " class="modal">
+    <div v-if="showModalEditarCategoria" class="modal">
         <div class="modal-content">
             <span @click="showModalEditarCategoria = false" class="close">&times;</span>
             <h2>Editar Categoría</h2>
-            <form @submit.prevent=" guardarCategoriaEditada ">
+            <form @submit.prevent="guardarCategoriaEditada">
                 <label for="nombreCategoriaEditada">Nombre Categoría:</label>
-                <input type="text" id="nombreCategoriaEditada" v-model=" categoriaEditada.nombre_categoria " required>
+                <input type="text" id="nombreCategoriaEditada" v-model="categoriaEditada.nombre_categoria" required>
 
                 <label for="descripcionCategoriaEditada">Descripción Categoría:</label>
-                <textarea id="descripcionCategoriaEditada" v-model=" categoriaEditada.descripcion_categoria "
-                    required></textarea>
+                <textarea id="descripcionCategoriaEditada" v-model="categoriaEditada.descripcion_categoria" required></textarea>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalEditarCategoria = false"
-                        class="btn-cancelar">Cancelar</button>
+                    <button type="button" @click="showModalEditarCategoria = false" class="btn-cancelar">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Editar Subcategoria -->
-    <div v-if=" showModalEditarSubcategoria " class="modal">
+    <div v-if="showModalEditarSubcategoria" class="modal">
         <div class="modal-content">
             <span @click="showModalEditarSubcategoria = false" class="close">&times;</span>
             <h2>Editar Subcategoría</h2>
-            <form @submit.prevent=" guardarSubcategoriaEditada ">
+            <form @submit.prevent="guardarSubcategoriaEditada">
                 <label for="nombreSubcategoriaEditada">Nombre Subcategoría:</label>
-                <input type="text" id="nombreSubcategoriaEditada" v-model=" subcategoriaEditada.nombre_categoria "
-                    required>
+                <input type="text" id="nombreSubcategoriaEditada" v-model="subcategoriaEditada.nombre_categoria" required>
 
                 <label for="descripcionSubcategoriaEditada">Descripción Subcategoría:</label>
-                <textarea id="descripcionSubcategoriaEditada" v-model=" subcategoriaEditada.descripcion_categoria "
-                    required></textarea>
+                <textarea id="descripcionSubcategoriaEditada" v-model="subcategoriaEditada.descripcion_categoria" required></textarea>
 
                 <label for="categoriaPrincipalEditada">Categoría Principal:</label>
-                <select id="categoriaPrincipalEditada" v-model=" subcategoriaEditada.categoria_padre " required>
-                    <option v-for=" categoria in categoriasPrincipales " :key=" categoria.id " :value=" categoria.id ">
+                <select id="categoriaPrincipalEditada" v-model="subcategoriaEditada.categoria_padre" required>
+                    <option v-for="categoria in categoriasPrincipales" :key="categoria.id" :value="categoria.id">
                         {{ categoria.nombre_categoria }}
                     </option>
                 </select>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-aceptar">Aceptar</button>
-                    <button type="button" @click="showModalEditarSubcategoria = false"
-                        class="btn-cancelar">Cancelar</button>
+                    <button type="button" @click="showModalEditarSubcategoria = false" class="btn-cancelar">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Confirmación Eliminación -->
-    <div v-if=" showConfirmacionEliminacion " class="modal">
+    <div v-if="showConfirmacionEliminacion" class="modal">
         <div class="modal-content">
             <span @click="showConfirmacionEliminacion = false" class="close">&times;</span>
             <h2>Confirmar Eliminación</h2>
@@ -168,7 +162,7 @@
             </div>
             <p>¿Estás seguro de que deseas eliminar esta categoría?</p>
             <div class="modal-buttons">
-                <button @click="eliminarCategoria( confirmarEliminacionId )" class="btn-aceptar">Eliminar</button>
+                <button @click="eliminarCategoria(confirmarEliminacionId)" class="btn-aceptar">Eliminar</button>
                 <button @click="showConfirmacionEliminacion = false" class="btn-cancelar">Cancelar</button>
             </div>
         </div>
@@ -176,6 +170,8 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 
 export default {
@@ -209,6 +205,28 @@ export default {
             },
             categorias: [],
             categoriasPrincipales: [] // Nuevo estado para categorías principales
+        };
+    },
+    setup() {
+        const { props } = usePage();
+        const user = props.auth.user;
+
+        const canEdit = computed(() => {
+            return user.Editar === 1;
+        });
+
+        const canCreate = computed(() => {
+            return user.Crear === 1;
+        });
+
+        const canDelete = computed(() => {
+            return user.Eliminar === 1;
+        });
+
+        return {
+            canEdit,
+            canCreate,
+            canDelete
         };
     },
     computed: {
