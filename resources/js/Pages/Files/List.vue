@@ -27,7 +27,7 @@ const canEdit = computed(() => {
 });
 
 const canDelete = computed(() => {
-    return user.Eliminar === 0;
+    return user.Eliminar === 1;
 });
 
 const fetchFiles = async (page = 1) => {
