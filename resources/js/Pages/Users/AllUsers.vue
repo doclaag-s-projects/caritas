@@ -9,6 +9,7 @@ const views = ref([]);
 const roles = ref([]);
 const users = ref([]);
 const notification = ref(''); // Para mostrar notificaciones
+const roleError = ref(null);
 
 // Watch para roles
 watch(roles, (newRoles) => {
@@ -82,9 +83,9 @@ const loadData = async () => {
 onMounted(loadData);
 
 const basicPermissions = [
-    { id: 1, name: 'CREAR' },
-    { id: 2, name: 'EDITAR' },
-    { id: 3, name: 'ELIMINAR' }
+    { id: 1, name: 'Crear' },
+    { id: 2, name: 'Editar' },
+    { id: 3, name: 'Eliminar' }
 ];
 
 // Table State
@@ -100,8 +101,10 @@ const userForm = ref({
     password: '',
     confirmPassword: '',
     gender: '',
-    roleId: '',
-    permissions: []
+    roleId: null,
+    Crear: false,
+    Eliminar: false,
+    Editar: false,
 });
 
 const roleForm = ref({
@@ -158,7 +161,6 @@ const isFormValid = computed(() => {
     );
 });
 
-// Methods
 const validatePassword = () => {
     if (userForm.value.password.length < 8) {
         passwordError.value = 'La contraseña debe tener al menos 8 caracteres';
@@ -260,28 +262,6 @@ const closeEditRoleModal = () => {
     };
 };
 
-// Action Methods
-const saveUser = async () => {
-    if (!isFormValid.value) return;
-
-    const userData = {
-        ...userForm.value,
-        roles: [{ name: roles.value.find(r => r.id === userForm.value.roleId).name }]
-    };
-
-    if (isEditing.value) {
-        const index = users.value.findIndex(u => u.id === userData.id);
-        if (index !== -1) {
-            users.value[index] = userData;
-        }
-    } else {
-        userData.id = users.value.length + 1;
-        users.value.push(userData);
-    }
-
-    closeUserModal();
-};
-
 const savePermissions = () => {
     const userIndex = users.value.findIndex(u => u.id === currentUserId.value);
     if (userIndex !== -1) {
@@ -332,8 +312,47 @@ const saveRole = async () => {
     closeEditRoleModal();
 };
 
+const saveUser = async () => {
+    if (!isFormValid.value) return;
 
+    // Transforma los permisos seleccionados en el formato requerido
+    const permissionsMap = {};
+    basicPermissions.forEach(permission => {
+        // Verifica si el permiso está incluido en `userForm.value.permissions`
+        permissionsMap[permission.name] = userForm.value.permissions.includes(permission.id) ? '1' : '0';
+    });
 
+    const userData = {
+        name: userForm.value.name,
+        email: userForm.value.email,
+        password: userForm.value.password,
+        password_confirmation: userForm.value.confirmPassword,
+        gender: userForm.value.gender,
+        rol_id: userForm.value.roleId,
+        ...permissionsMap
+    };
+
+    try {
+        if (isEditing.value) {
+            const response = await axios.put(`/user/controller/${userForm.value.id}`, userData);
+            const index = users.value.findIndex(u => u.id === userForm.value.id);
+            if (index !== -1) {
+                users.value[index] = response.data.user;
+            }
+        } else {
+            const response = await axios.post('/users/create', userData);
+            users.value.push(response.data.user);
+        }
+
+        notifications.value.push({ type: 'success', message: 'Usuario guardado correctamente' });
+
+        closeUserModal();
+        await loadData();
+      } catch (error) {
+        console.error('Error al guardar el usuario:', error.response.data);
+        notifications.value.push({ type: 'error', message: isEditing.value ? 'Error al actualizar el usuario: ' + error.response.data : 'Error al crear el usuario: ' + error.response.data });
+      }
+};
 
 const showDeleteModal = ref(false);
 const roleIdToDelete = ref(null);
@@ -368,9 +387,6 @@ const confirmDeleteRole = async () => {
     await loadRoles();
     closeDeleteModal();
 };
-
-
-
 
 const editUser = (user) => {
     openUserModal(user);
@@ -564,24 +580,23 @@ const showSuccessMessage = (message) => {
                         </div>
                     </div>
                     
-
                     <!-- Modal de confirmación de eliminación -->
-<div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmación de Eliminación</h3>
-        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este rol?</p>
-        <div class="flex justify-end space-x-4">
-            <button @click="confirmDeleteRole"
-                class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200">
-                Sí, eliminar
-            </button>
-            <button @click="closeDeleteModal"
-                class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-200">
-                Cancelar
-            </button>
-        </div>
-    </div>
-</div>
+                    <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmación de Eliminación</h3>
+                            <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este rol?</p>
+                            <div class="flex justify-end space-x-4">
+                                <button @click="confirmDeleteRole"
+                                    class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200">
+                                    Sí, eliminar
+                                </button>
+                                <button @click="closeDeleteModal"
+                                    class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-200">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Vistas -->
                     <div class="bg-white shadow-xl rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-200">
@@ -661,7 +676,6 @@ const showSuccessMessage = (message) => {
                                             <option value="">Seleccionar género</option>
                                             <option value="Masculino">Masculino</option>
                                             <option value="Femenino">Femenino</option>
-                                            <option value="Otro">Otro</option>
                                         </select>
                                     </div>
 

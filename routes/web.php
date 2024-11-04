@@ -101,5 +101,6 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/views', [ViewController::class, 'Index'])->name('views.index');
     Route::get('/usersend', [UserController::class, 'show']);
-    Route::put('/user/{id}', [UserController::class, 'update']);
+    Route::put('/user/controller/{id}', [UserController::class, 'update']);
+    Route::post('/users/create', [UserController::class, 'store'])->name('users.store');
 });
