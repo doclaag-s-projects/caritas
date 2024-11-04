@@ -40,16 +40,17 @@ class RoleController extends Controller
             'nombre' => 'required|string|max:255',
             'estado' => 'required|boolean', // Valida que estado sea 0 o 1
         ]);
-    
+
         $role->update($request->only('nombre', 'estado'));
-    
+
         return response()->json($role);
     }
 
     public function destroy(Role $role)
     {
-        $role->update(['estado' => 1]);
+        // Cambia el estado del rol a 0 en lugar de eliminarlo
+        $role->update(['estado' => 0]);
 
-        return response()->json(['id' => $role->id], 200);
+        return response()->json(['message' => 'Role desactivado exitosamente', 'id' => $role->id], 200);
     }
 }

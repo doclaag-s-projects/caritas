@@ -1,69 +1,85 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ToastNotification from '@/Components/ToastNotification.vue';
 
+const notifications = ref([]); // Para mostrar notificaciones
+const views = ref([]);
+const roles = ref([]);
+const users = ref([]);
+const notification = ref(''); // Para mostrar notificaciones
 
-const views = ref( [] );
-const roles = ref( [] );
-const users = ref( [] );
+// Watch para roles
+watch(roles, (newRoles) => {
+    console.log('Roles actualizados:', newRoles);
+    // Aquí puedes realizar acciones adicionales si es necesario
+});
 
 // Obtener datos
-onMounted( async () => {
+const loadRoles = async () => {
     try {
-
-        const userResponse = await axios.get( '/usersend', {
+        const response = await axios.get('/roles', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
+        roles.value = response.data
+            .filter(role => role.estado !== 0) // Filtrar roles con estado 0
+            .map(role => ({
+                id: role.id,
+                name: role.nombre,
+                estado: role.estado,
+                views: [1, 2, 3, 4]
+            }));
 
-        const viewsResponse = await axios.get( '/views', {
+        // Esto forzará la reactividad en la vista
+        roles.value = [...roles.value];
+    } catch (error) {
+        console.error('Error fetching roles:', error);
+    }
+};
+
+const loadData = async () => {
+    try {
+        await loadRoles();
+        const userResponse = await axios.get('/usersend', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        const rolesResponse = await axios.get( '/roles', {
+        const viewsResponse = await axios.get('/views', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        users.value = userResponse.data.map( user => ( {
+        users.value = userResponse.data.map(user => ({
             id: user.id,
             name: user.name,
             email: user.email,
             gender: user.gender,
-            roles: user.usuarios_roles.map( usuarioRol => ( {
+            roles: user.usuarios_roles.map(usuarioRol => ({
                 name: usuarioRol.role.nombre
-            } ) ),
+            })),
             permissions: [
                 { crear: 'CREAR', estado: user.Crear },
                 { editar: 'EDITAR', estado: user.Editar },
                 { eliminar: 'ELIMINAR', estado: user.Eliminar }
             ],
-        } ) );
+        }));
 
-        console.log( users.value );
-
-        roles.value = rolesResponse.data.map( role => ( {
-            id: role.id,
-            name: role.nombre,
-            permissions: [ { id: 1, name: 'CREAR' }, { id: 2, name: 'EDITAR' }, { id: 3, name: 'ELIMINAR' } ],
-            views: [ 1, 2, 3, 4 ],
-        } ) );
-
-        views.value = viewsResponse.data.map( view => ( {
+        views.value = viewsResponse.data.map(view => ({
             id: view.id,
             name: view.nombre,
             active: 'activo',
-        } ) );
+        }));
 
-    } catch ( error ) {
-        console.error( 'Error fetching data:', error );
+    } catch (error) {
+        console.error('Error fetching data:', error);
     }
-} );
+};
 
-
+onMounted(loadData);
 
 const basicPermissions = [
     { id: 1, name: 'CREAR' },
@@ -72,13 +88,13 @@ const basicPermissions = [
 ];
 
 // Table State
-const tableHeaders = [ 'Usuario', 'Email', 'Género', 'Rol', 'Acciones' ];
-const searchQuery = ref( '' );
-const currentPage = ref( 1 );
+const tableHeaders = ['Usuario', 'Email', 'Género', 'Rol', 'Acciones'];
+const searchQuery = ref('');
+const currentPage = ref(1);
 const itemsPerPage = 10;
 
 // Form State
-const userForm = ref( {
+const userForm = ref({
     name: '',
     email: '',
     password: '',
@@ -86,41 +102,42 @@ const userForm = ref( {
     gender: '',
     roleId: '',
     permissions: []
-} );
+});
 
-const roleForm = ref( {
+const roleForm = ref({
     id: null,
     name: '',
-    views: []
-} );
+    views: [],
+    estado: true // Asegúrate de incluir el estado en el formulario
+});
 
 // Modal State
-const showUserModal = ref( false );
-const showPermissionsModal = ref( false );
-const showEditRoleModal = ref( false );
-const isEditing = ref( false );
-const selectedPermissions = ref( [] );
-const currentUserId = ref( null );
+const showUserModal = ref(false);
+const showPermissionsModal = ref(false);
+const showEditRoleModal = ref(false);
+const isEditing = ref(false);
+const selectedPermissions = ref([]);
+const currentUserId = ref(null);
 
 // Validation State
-const passwordError = ref( '' );
-const passwordMatchError = ref( '' );
+const passwordError = ref('');
+const passwordMatchError = ref('');
 
 // Computed Properties
-const filteredUsers = computed( () => {
-    return users.value.filter( user =>
-        user.name.toLowerCase().includes( searchQuery.value.toLowerCase() ) ||
-        user.email.toLowerCase().includes( searchQuery.value.toLowerCase() )
+const filteredUsers = computed(() => {
+    return users.value.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
     );
-} );
+});
 
-const totalPages = computed( () => Math.ceil( filteredUsers.value.length / itemsPerPage ) );
-const startIndex = computed( () => ( currentPage.value - 1 ) * itemsPerPage );
-const endIndex = computed( () => startIndex.value + itemsPerPage );
-const paginatedUsers = computed( () => filteredUsers.value.slice( startIndex.value, endIndex.value ) );
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage));
+const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage);
+const endIndex = computed(() => startIndex.value + itemsPerPage);
+const paginatedUsers = computed(() => filteredUsers.value.slice(startIndex.value, endIndex.value));
 
-const isFormValid = computed( () => {
-    if ( isEditing.value ) {
+const isFormValid = computed(() => {
+    if (isEditing.value) {
         return (
             userForm.value.name &&
             userForm.value.email &&
@@ -139,11 +156,11 @@ const isFormValid = computed( () => {
         !passwordError.value &&
         !passwordMatchError.value
     );
-} );
+});
 
 // Methods
 const validatePassword = () => {
-    if ( userForm.value.password.length < 8 ) {
+    if (userForm.value.password.length < 8) {
         passwordError.value = 'La contraseña debe tener al menos 8 caracteres';
         return false;
     }
@@ -152,7 +169,7 @@ const validatePassword = () => {
 };
 
 const validatePasswordMatch = () => {
-    if ( userForm.value.password !== userForm.value.confirmPassword ) {
+    if (userForm.value.password !== userForm.value.confirmPassword) {
         passwordMatchError.value = 'Las contraseñas no coinciden';
         return false;
     }
@@ -162,25 +179,25 @@ const validatePasswordMatch = () => {
 
 // Navigation Methods
 const nextPage = () => {
-    if ( currentPage.value < totalPages.value ) {
+    if (currentPage.value < totalPages.value) {
         currentPage.value++;
     }
 };
 
 const prevPage = () => {
-    if ( currentPage.value > 1 ) {
+    if (currentPage.value > 1) {
         currentPage.value--;
     }
 };
 
 // Modal Methods
-const openUserModal = ( user = null ) => {
+const openUserModal = (user = null) => {
     isEditing.value = !!user;
-    if ( user ) {
+    if (user) {
         userForm.value = {
             ...user,
-            roleId: roles.value.find( r => r.name === user.roles[ 0 ].name )?.id || '',
-            permissions: [ ...user.permissions ]
+            roleId: roles.value.find(r => r.name === user.roles[0].name)?.id || '',
+            permissions: [...user.permissions]
         };
     } else {
         userForm.value = {
@@ -210,10 +227,10 @@ const closeUserModal = () => {
     };
 };
 
-const openPermissionsModal = ( userId ) => {
+const openPermissionsModal = (userId) => {
     currentUserId.value = userId;
-    const user = users.value.find( u => u.id === userId );
-    selectedPermissions.value = [ ...user.permissions ];
+    const user = users.value.find(u => u.id === userId);
+    selectedPermissions.value = [...user.permissions];
     showPermissionsModal.value = true;
 };
 
@@ -223,11 +240,12 @@ const closePermissionsModal = () => {
     selectedPermissions.value = [];
 };
 
-const openEditRoleModal = ( role ) => {
+const openEditRoleModal = (role) => {
     roleForm.value = {
         id: role.id,
         name: role.name,
-        views: [ ...role.views ]
+        views: [...role.views],
+        estado: role.estado // Asegúrate de incluir el estado en el formulario
     };
     showEditRoleModal.value = true;
 };
@@ -237,89 +255,176 @@ const closeEditRoleModal = () => {
     roleForm.value = {
         id: null,
         name: '',
-        views: []
+        views: [],
+        estado: true // Asegúrate de incluir el estado en el formulario
     };
 };
 
 // Action Methods
-const saveUser = () => {
-    if ( !isFormValid.value ) return;
+const saveUser = async () => {
+    if (!isFormValid.value) return;
 
     const userData = {
         ...userForm.value,
-        roles: [ { name: roles.value.find( r => r.id === userForm.value.roleId ).name } ]
+        roles: [{ name: roles.value.find(r => r.id === userForm.value.roleId).name }]
     };
 
-    if ( isEditing.value ) {
-        const index = users.value.findIndex( u => u.id === userData.id );
-        if ( index !== -1 ) {
-            users.value[ index ] = userData;
+    if (isEditing.value) {
+        const index = users.value.findIndex(u => u.id === userData.id);
+        if (index !== -1) {
+            users.value[index] = userData;
         }
     } else {
         userData.id = users.value.length + 1;
-        users.value.push( userData );
+        users.value.push(userData);
     }
 
     closeUserModal();
 };
 
 const savePermissions = () => {
-    const userIndex = users.value.findIndex( u => u.id === currentUserId.value );
-    if ( userIndex !== -1 ) {
-        users.value[ userIndex ].permissions = [ ...selectedPermissions.value ];
+    const userIndex = users.value.findIndex(u => u.id === currentUserId.value);
+    if (userIndex !== -1) {
+        users.value[userIndex].permissions = [...selectedPermissions.value];
     }
     closePermissionsModal();
 };
 
-const saveRole = () => {
-    const roleIndex = roles.value.findIndex( r => r.id === roleForm.value.id );
-    if ( roleIndex !== -1 ) {
-        roles.value[ roleIndex ] = {
-            ...roles.value[ roleIndex ],
-            name: roleForm.value.name,
-            views: roleForm.value.views
-        };
+
+const saveRole = async () => {
+    const roleName = roleForm.value.name.trim(); // Elimina espacios en blanco al principio y al final
+
+    // Validar que el nombre no contenga espacios, números o símbolos
+    const namePattern = /^[A-Za-z]+$/; // Solo permite letras
+
+    if (!namePattern.test(roleName)) {
+        notifications.value.push({ type: 'error', message: 'El nombre del rol solo debe contener letras.' });
+        return; // Detiene la ejecución si la validación falla
     }
+
+    const roleData = {
+        nombre: roleName,
+        estado: roleForm.value.estado
+    };
+
+    try {
+        if (roleForm.value.id) {
+            // Actualizar rol existente
+            await axios.put(`/roles/${roleForm.value.id}`, roleData, {
+                headers: { 'Accept': 'application/json' },
+                withCredentials: true
+            });
+            notifications.value.push({ type: 'success', message: 'Rol actualizado correctamente' });
+        } else {
+            // Crear nuevo rol
+            await axios.post('/roles', roleData, {
+                headers: { 'Accept': 'application/json' },
+                withCredentials: true
+            });
+            notifications.value.push({ type: 'success', message: 'Rol creado correctamente' });
+        }
+    } catch (error) {
+        console.error(roleForm.value.id ? 'Error updating role:' : 'Error creating role:', error);
+        notifications.value.push({ type: 'error', message: roleForm.value.id ? 'Error al actualizar el rol' : 'Error al crear el rol' });
+    }
+
+    await loadRoles();
     closeEditRoleModal();
 };
 
-const editUser = ( user ) => {
-    openUserModal( user );
+
+
+
+const showDeleteModal = ref(false);
+const roleIdToDelete = ref(null);
+
+const deleteRole = (roleId) => {
+    openDeleteModal(roleId);
 };
 
-const editRole = ( role ) => {
-    openEditRoleModal( role );
+const openDeleteModal = (roleId) => {
+    roleIdToDelete.value = roleId;
+    showDeleteModal.value = true;
 };
 
-const deleteUser = ( userId ) => {
-    if ( confirm( '¿Está seguro de eliminar este usuario?' ) ) {
-        users.value = users.value.filter( user => user.id !== userId );
+const closeDeleteModal = () => {
+    showDeleteModal.value = false;
+    roleIdToDelete.value = null;
+};
+
+const confirmDeleteRole = async () => {
+    if (roleIdToDelete.value) {
+        try {
+            await axios.delete(`/roles/${roleIdToDelete.value}`, {
+                headers: { 'Accept': 'application/json' },
+                withCredentials: true
+            });
+            notifications.value.push({ type: 'success', message: 'Rol eliminado correctamente' });
+        } catch (error) {
+            console.error('Error eliminando rol:', error);
+            notifications.value.push({ type: 'error', message: 'Error al intentar eliminar el rol' });
+        }
+    }
+    await loadRoles();
+    closeDeleteModal();
+};
+
+
+
+
+const editUser = (user) => {
+    openUserModal(user);
+};
+
+const editRole = (role) => {
+    openEditRoleModal(role);
+};
+
+const deleteUser = (userId) => {
+    if (confirm('¿Está seguro de eliminar este usuario?')) {
+        users.value = users.value.filter(user => user.id !== userId);
     }
 };
 
 const openCreateRoleModal = () => {
     roleForm.value = {
-        id: roles.value.length + 1,
+        id: null,
         name: '',
-        views: []
+        views: [],
+        estado: true // Asegúrate de incluir el estado en el formulario
     };
     showEditRoleModal.value = true;
 };
-</script>
 
+// Notificación de éxito
+const showSuccessMessage = (message) => {
+    notification.value = message;
+    setTimeout(() => {
+        notification.value = '';
+    }, 3000);
+};
+</script>
 <template>
-    <AppLayout title="Usarios">
+    <AppLayout title="Usuarios">
+        <div class="notification-container">
+            <ToastNotification
+                v-for="(notification, index) in notifications"
+                :key="index"
+                :type="notification.type"
+                :message="notification.message"
+                />
+        </div>
+            
 
         <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div class="max-w-7xl mx-auto">
-                <h1 class="text-3xl font-extrabold text-gray-900 text-center mb-10">Gestión de Usuarios, Roles y
-                    Permisos</h1>
+                <h1 class="text-3xl font-extrabold text-gray-900 text-center mb-10">Gestión de Usuarios, Roles y Permisos</h1>
 
                 <!-- Tabla de Usuarios -->
                 <div class="bg-white shadow-xl rounded-lg overflow-hidden mb-8">
                     <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                         <div class="flex-1 max-w-sm">
-                            <input v-model=" searchQuery " type="text" placeholder="Buscar usuarios..."
+                            <input v-model="searchQuery" type="text" placeholder="Buscar usuarios..."
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                         </div>
                         <button @click="openUserModal()"
@@ -333,20 +438,20 @@ const openCreateRoleModal = () => {
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th v-for="   header in tableHeaders   " :key=" header "
+                                    <th v-for="header in tableHeaders" :key="header"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         {{ header }}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="   user in paginatedUsers   " :key=" user.id " class="hover:bg-gray-50">
+                                <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
                                                 <img class="h-10 w-10 rounded-full"
-                                                    :src=" `https://ui-avatars.com/api/?name=${ encodeURIComponent( user.name ) }&background=random` "
-                                                    :alt=" user.name ">
+                                                    :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`"
+                                                    :alt="user.name">
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
@@ -358,14 +463,14 @@ const openCreateRoleModal = () => {
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span
                                             class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            {{ user.roles[ 0 ]?.name }}
+                                            {{ user.roles[0]?.name }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        <button @click="editUser( user )" class="text-blue-600 hover:text-blue-900">
+                                        <button @click="editUser(user)" class="text-blue-600 hover:text-blue-900">
                                             Editar
                                         </button>
-                                        <button @click="deleteUser( user.id )" class="text-red-600 hover:text-red-900">
+                                        <button @click="deleteUser(user.id)" class="text-red-600 hover:text-red-900">
                                             Eliminar
                                         </button>
                                     </td>
@@ -373,74 +478,83 @@ const openCreateRoleModal = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    <!-- Paginación -->
-                    <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                        <div class="flex-1 flex justify-between sm:hidden">
-                            <button @click=" prevPage " :disabled=" currentPage === 1 "
-                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                :class=" { 'opacity-50 cursor-not-allowed': currentPage === 1 } ">
-                                Anterior
-                            </button>
-                            <button @click=" nextPage " :disabled=" currentPage >= totalPages "
-                                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                :class=" { 'opacity-50 cursor-not-allowed': currentPage >= totalPages } ">
-                                Siguiente
-                            </button>
+                <!-- Paginación -->
+                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button @click="prevPage" :disabled="currentPage === 1"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }">
+                            Anterior
+                        </button>
+                        <button @click="nextPage" :disabled="currentPage >= totalPages"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                            :class="{ 'opacity-50 cursor-not-allowed': currentPage >= totalPages }">
+                            Siguiente
+                        </button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Mostrando
+                                <span class="font-medium">{{ startIndex + 1 }}</span>
+                                a
+                                <span class="font-medium">{{ Math.min(endIndex, filteredUsers.length) }}</span>
+                                de
+                                <span class="font-medium">{{ filteredUsers.length }}</span>
+                                resultados
+                            </p>
                         </div>
-                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Mostrando
-                                    <span class="font-medium">{{ startIndex + 1 }}</span>
-                                    a
-                                    <span class="font-medium">{{ Math.min( endIndex, filteredUsers.length ) }}</span>
-                                    de
-                                    <span class="font-medium">{{ filteredUsers.length }}</span>
-                                    resultados
-                                </p>
-                            </div>
-                            <div>
-                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    <button v-for="   page in totalPages   " :key=" page " @click="currentPage = page"
-                                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium"
-                                        :class=" [
-                                            currentPage === page
-                                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                                : 'text-gray-500 hover:bg-gray-50',
-                                            page === 1 ? 'rounded-l-md' : '',
-                                            page === totalPages ? 'rounded-r-md' : ''
-                                        ] ">
-                                        {{ page }}
-                                    </button>
-                                </nav>
-                            </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                <button v-for="page in totalPages" :key="page" @click="currentPage = page"
+                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium"
+                                    :class="[
+                                        currentPage === page
+                                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                            : 'text-gray-500 hover:bg-gray-50',
+                                        page === 1 ? 'rounded-l-md' : '',
+                                        page === totalPages ? 'rounded-r-md' : ''
+                                    ]">
+                                    {{ page }}
+                                </button>
+                            </nav>
                         </div>
                     </div>
                 </div>
 
                 <!-- Grid de Roles y Vistas -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="grid //grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- Roles -->
-                    <div class="bg-white shadow-xl rounded-lg overflow-hidden">
-                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div class="bg-white shadow-xl rounded-lg overflow-hidden ">
+                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center modal">
                             <h2 class="text-xl font-semibold text-gray-800">Roles</h2>
-                            <button @click=" openCreateRoleModal "
+                            <button @click="openCreateRoleModal"
                                 class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
                                 Crear Rol
                             </button>
                         </div>
                         <div class="p-6">
+                            <!-- Mensaje de error de validación -->
+                            <div v-if="roleError" class="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
+                                    {{ roleError }}
+                            </div>
                             <div class="space-y-4">
-                                <div v-for="   role in roles   " :key=" role.id " class="p-4 bg-gray-50 rounded-lg">
+                                <div v-for="role in roles" :key="role.id" class="p-4 bg-gray-50 rounded-lg">
                                     <div class="flex justify-between items-center mb-2">
                                         <h3 class="text-lg font-medium text-gray-900">{{ role.name }}</h3>
-                                        <button @click="editRole( role )" class="text-blue-600 hover:text-blue-900">
-                                            Editar
-                                        </button>
+                                        <div>
+                                            <button @click="editRole(role)" class="text-blue-600 hover:text-blue-900 mr-2">
+                                                Editar
+                                            </button>
+                                            <button @click="deleteRole(role.id)" class="text-red-600 hover:text-red-900">
+                                                Eliminar
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span v-for="   permission in role.permissions   " :key=" permission.id "
+                                        <span v-for="permission in role.permissions" :key="permission.id"
                                             class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                                             {{ permission.name }}
                                         </span>
@@ -449,7 +563,25 @@ const openCreateRoleModal = () => {
                             </div>
                         </div>
                     </div>
+                    
 
+                    <!-- Modal de confirmación de eliminación -->
+<div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmación de Eliminación</h3>
+        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este rol?</p>
+        <div class="flex justify-end space-x-4">
+            <button @click="confirmDeleteRole"
+                class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200">
+                Sí, eliminar
+            </button>
+            <button @click="closeDeleteModal"
+                class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-200">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
                     <!-- Vistas -->
                     <div class="bg-white shadow-xl rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-200">
@@ -457,7 +589,7 @@ const openCreateRoleModal = () => {
                         </div>
                         <div class="p-6">
                             <div class="grid grid-cols-2 gap-4">
-                                <div v-for="  view in views  " :key=" view.id "
+                                <div v-for="view in views" :key="view.id"
                                     class="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-700">{{ view.name }}</span>
                                     <span
@@ -471,7 +603,7 @@ const openCreateRoleModal = () => {
                 </div>
 
                 <!-- Modal de Usuario (Crear/Editar) -->
-                <div v-if=" showUserModal "
+                <div v-if="showUserModal"
                     class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
                     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
                         <div class="p-6">
@@ -479,7 +611,7 @@ const openCreateRoleModal = () => {
                                 <h3 class="text-lg font-semibold text-gray-900">
                                     {{ isEditing ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}
                                 </h3>
-                                <button @click=" closeUserModal " class="text-gray-400 hover:text-gray-600">
+                                <button @click="closeUserModal" class="text-gray-400 hover:text-gray-600">
                                     <span class="sr-only">Cerrar</span>
                                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -488,47 +620,43 @@ const openCreateRoleModal = () => {
                                 </button>
                             </div>
 
-                            <form @submit.prevent=" saveUser " class="space-y-4">
+                            <form @submit.prevent="saveUser" class="space-y-4">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                        <input id="name" v-model=" userForm.name " type="text" required
+                                        <input id="name" v-model="userForm.name" type="text" required
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                     </div>
 
                                     <div>
                                         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                                        <input id="email" v-model=" userForm.email " type="email" required
+                                        <input id="email" v-model="userForm.email" type="email" required
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                     </div>
 
-                                    <template v-if=" !isEditing ">
+                                    <template v-if="!isEditing">
                                         <div>
                                             <label for="password"
                                                 class="block text-sm font-medium text-gray-700">Contraseña</label>
-                                            <input id="password" v-model=" userForm.password " type="password" required
-                                                @input=" validatePassword "
+                                            <input id="password" v-model="userForm.password" type="password" required
+                                                @input="validatePassword"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                                            <p v-if=" passwordError " class="mt-1 text-xs text-red-600">{{ passwordError
-                                                }}</p>
+                                            <p v-if="passwordError" class="mt-1 text-xs text-red-600">{{ passwordError }}</p>
                                         </div>
 
                                         <div>
                                             <label for="confirmPassword"
-                                                class="block text-sm font-medium text-gray-700">Confirmar
-                                                Contraseña</label>
-                                            <input id="confirmPassword" v-model=" userForm.confirmPassword "
-                                                type="password" required @input=" validatePasswordMatch "
+                                                class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+                                            <input id="confirmPassword" v-model="userForm.confirmPassword" type="password" required
+                                                @input="validatePasswordMatch"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                                            <p v-if=" passwordMatchError " class="mt-1 text-xs text-red-600">{{
-                                                passwordMatchError }}</p>
+                                            <p v-if="passwordMatchError" class="mt-1 text-xs text-red-600">{{ passwordMatchError }}</p>
                                         </div>
                                     </template>
 
                                     <div>
-                                        <label for="gender"
-                                            class="block text-sm font-medium text-gray-700">Género</label>
-                                        <select id="gender" v-model=" userForm.gender " required
+                                        <label for="gender" class="block text-sm font-medium text-gray-700">Género</label>
+                                        <select id="gender" v-model="userForm.gender" required
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                             <option value="">Seleccionar género</option>
                                             <option value="Masculino">Masculino</option>
@@ -539,10 +667,10 @@ const openCreateRoleModal = () => {
 
                                     <div>
                                         <label for="role" class="block text-sm font-medium text-gray-700">Rol</label>
-                                        <select id="role" v-model=" userForm.roleId " required
+                                        <select id="role" v-model="userForm.roleId" required
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                             <option value="">Seleccionar rol</option>
-                                            <option v-for="   role in roles   " :key=" role.id " :value=" role.id ">
+                                            <option v-for="role in roles" :key="role.id" :value="role.id">
                                                 {{ role.name }}
                                             </option>
                                         </select>
@@ -553,12 +681,11 @@ const openCreateRoleModal = () => {
                                 <div class="mt-6">
                                     <h4 class="text-sm font-medium text-gray-700 mb-4">Permisos del Usuario</h4>
                                     <div class="space-y-4">
-                                        <div v-for="   permission in basicPermissions   " :key=" permission.id "
-                                            class="flex items-center  justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div v-for="permission in basicPermissions" :key="permission.id"
+                                            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <span class="text-sm font-medium text-gray-700">{{ permission.name }}</span>
                                             <label class="relative inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" v-model=" userForm.permissions "
-                                                    :value=" permission.id " class="sr-only peer" />
+                                                <input type="checkbox" v-model="userForm.permissions" :value="permission.id" class="sr-only peer" />
                                                 <div
                                                     class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
                                                 </div>
@@ -568,11 +695,11 @@ const openCreateRoleModal = () => {
                                 </div>
 
                                 <div class="flex justify-end space-x-3 mt-6">
-                                    <button type="button" @click=" closeUserModal "
+                                    <button type="button" @click="closeUserModal"
                                         class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
                                         Cancelar
                                     </button>
-                                    <button type="submit" :disabled=" !isFormValid "
+                                    <button type="submit" :disabled="!isFormValid"
                                         class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
                                         {{ isEditing ? 'Guardar Cambios' : 'Crear Usuario' }}
                                     </button>
@@ -583,13 +710,13 @@ const openCreateRoleModal = () => {
                 </div>
 
                 <!-- Modal de Editar Rol -->
-                <div v-if=" showEditRoleModal "
+                <div v-if="showEditRoleModal"
                     class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
                     <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-semibold text-gray-900">Editar Rol</h3>
-                                <button @click=" closeEditRoleModal " class="text-gray-400 hover:text-gray-600">
+                                <h3 class="text-lg font-semibold text-gray-900">{{ roleForm.id ? 'Editar Rol' : 'Crear Rol' }}</h3>
+                                <button @click="closeEditRoleModal" class="text-gray-400 hover:text-gray-600">
                                     <span class="sr-only">Cerrar</span>
                                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -598,23 +725,21 @@ const openCreateRoleModal = () => {
                                 </button>
                             </div>
 
-                            <form @submit.prevent=" saveRole " class="space-y-4">
+                            <form @submit.prevent="saveRole" class="space-y-4">
                                 <div>
-                                    <label for="roleName" class="block text-sm font-medium text-gray-700">Nombre del
-                                        Rol</label>
-                                    <input id="roleName" v-model=" roleForm.name " type="text" required
+                                    <label for="roleName" class="block text-sm font-medium text-gray-700">Nombre del Rol</label>
+                                    <input id="roleName" v-model="roleForm.name" type="text" required
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                 </div>
 
                                 <div class="mt-6">
-                                    <h4 class="text-sm font-medium text-gray-700 mb-4">Vistas Accesibles</h4>
+                                    
                                     <div class="space-y-4">
-                                        <div v-for="   view in views   " :key=" view.id "
+                                        <div v-for="view in views" :key="view.id"
                                             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <span class="text-sm font-medium text-gray-700">{{ view.name }}</span>
                                             <label class="relative inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" v-model=" roleForm.views " :value=" view.id "
-                                                    class="sr-only peer" />
+                                                <input type="checkbox" v-model="roleForm.views" :value="view.id" class="sr-only peer" />
                                                 <div
                                                     class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
                                                 </div>
@@ -624,7 +749,7 @@ const openCreateRoleModal = () => {
                                 </div>
 
                                 <div class="flex justify-end space-x-3">
-                                    <button type="button" @click=" closeEditRoleModal "
+                                    <button type="button" @click="closeEditRoleModal"
                                         class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
                                         Cancelar
                                     </button>
@@ -639,5 +764,8 @@ const openCreateRoleModal = () => {
                 </div>
             </div>
         </div>
+
+
+        
     </AppLayout>
 </template>
