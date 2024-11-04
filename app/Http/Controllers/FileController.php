@@ -266,7 +266,7 @@ class FileController extends Controller
 
         return response()->json(['message' => 'Archivo y etiqueta renombrados correctamente'], 200);
     }
-    // Vista de archivos PDF función. 
+    // Vista de archivos PDF función.
     public function preview($id)
     {
         $file = File::find($id);
@@ -349,6 +349,7 @@ class FileController extends Controller
             'subcategorias' => $subcategorias
         ]);
     }
+
     // Buscar archivos por nombre o etiqueta
     public function searchByName(Request $request)
     {
@@ -359,10 +360,11 @@ class FileController extends Controller
 
         // Obtener el nombre o parte del nombre del archivo a buscar y convertirlo a minúsculas
         $nombre = strtolower($request->input('nombre'));
+        $nombreLike = '%' . $nombre . '%'; // Configuramos el parámetro para búsqueda parcial
 
-        // Buscar categorías cuyo nombre coincida exactamente, ignorando mayúsculas/minúsculas
-        $categorias = CategoryModel::whereRaw('LOWER(nombre_categoria) = ?', [$nombre])
-            ->orWhereRaw('LOWER(descripcion_categoria) = ?', [$nombre])
+        // Buscar categorías cuyo nombre o descripción contengan el término de búsqueda, ignorando mayúsculas/minúsculas
+        $categorias = CategoryModel::whereRaw('LOWER(nombre_categoria) LIKE ?', [$nombreLike])
+            ->orWhereRaw('LOWER(descripcion_categoria) LIKE ?', [$nombreLike])
             ->with(['subcategorias.files' => function ($query) {
                 $query->where('publico', 1);
             }, 'files' => function ($query) {
@@ -370,14 +372,14 @@ class FileController extends Controller
             }])
             ->get();
 
-        // Buscar archivos por nombre exacto, ignorando mayúsculas/minúsculas
-        $archivos = File::whereRaw('LOWER(nombre_archivo) = ?', [$nombre])
+        // Buscar archivos cuyo nombre contenga el término de búsqueda, ignorando mayúsculas/minúsculas
+        $archivos = File::whereRaw('LOWER(nombre_archivo) LIKE ?', [$nombreLike])
             ->where('publico', 1)
             ->get();
 
-        // Buscar archivos por etiquetas con coincidencia exacta, ignorando mayúsculas/minúsculas
-        $archivosPorEtiquetas = FileTag::whereHas('etiqueta', function ($q) use ($nombre) {
-            $q->whereRaw('LOWER(nombre_etiqueta) = ?', [$nombre]);
+        // Buscar archivos por etiquetas que contengan el término de búsqueda, ignorando mayúsculas/minúsculas
+        $archivosPorEtiquetas = FileTag::whereHas('etiqueta', function ($q) use ($nombreLike) {
+            $q->whereRaw('LOWER(nombre_etiqueta) LIKE ?', [$nombreLike]);
         })->with('archivo')->get()->pluck('archivo');
 
         // Retornar los resultados en formato JSON
