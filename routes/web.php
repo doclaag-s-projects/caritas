@@ -103,4 +103,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/usersend', [UserController::class, 'show']);
     Route::put('/user/controller/{id}', [UserController::class, 'update']);
     Route::post('/users/create', [UserController::class, 'store'])->name('users.store');
+    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 });

@@ -102,4 +102,32 @@ class UserController extends Controller
             return response()->json(['error' => 'Error al crear el usuario', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function destroy($id)
+    {
+        try {
+            // Buscar el usuario por ID
+            $user = User::find($id);
+
+            if (!$user) {
+                return response()->json(['error' => 'Usuario no encontrado.'], 404);
+            }
+
+            // Verificar si el usuario tiene relaciones en la tabla UsuarioRol
+            $usuarioRol = UsuarioRol::where('usuario_id', $id)->first();
+
+            if ($usuarioRol) {
+                // Eliminar el registro en la tabla usuarios_roles
+                $usuarioRol->delete();
+            }
+
+            // Eliminar el usuario
+            $user->delete();
+
+            return response()->json(['success' => 'Usuario eliminado correctamente.'], 200);
+        } catch (\Exception $e) {
+            // Manejar la excepción y retornar una respuesta de error
+            return response()->json(['error' => 'Error al eliminar el usuario', 'message' => $e->getMessage()], 500);
+        }
+    }
 }
