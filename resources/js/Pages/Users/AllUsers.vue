@@ -10,6 +10,7 @@ const roles = ref([]);
 const users = ref([]);
 const notification = ref(''); // Para mostrar notificaciones
 const roleError = ref(null);
+const assignedUsersCount = ref(0);
 
 // Watch para roles
 watch(roles, (newRoles) => {
@@ -275,7 +276,7 @@ const saveRole = async () => {
     const roleName = roleForm.value.name.trim(); // Elimina espacios en blanco al principio y al final
 
     // Validar que el nombre no contenga espacios, números o símbolos
-    const namePattern = /^[A-Za-z]+$/; // Solo permite letras
+    const namePattern = /^[A-Za-zñÑáéíóúÁÉÍÓÚ]+( [A-Za-zñÑáéíóúÁÉÍÓÚ]+)*$/; // Permite letras, incluyendo ñ y tildes
 
     if (!namePattern.test(roleName)) {
         notifications.value.push({ type: 'error', message: 'El nombre del rol solo debe contener letras.' });
@@ -357,9 +358,6 @@ const saveUser = async () => {
 const showDeleteModal = ref(false);
 const roleIdToDelete = ref(null);
 
-const deleteRole = (roleId) => {
-    openDeleteModal(roleId);
-};
 
 const openDeleteModal = (roleId) => {
     roleIdToDelete.value = roleId;
@@ -369,22 +367,48 @@ const openDeleteModal = (roleId) => {
 const closeDeleteModal = () => {
     showDeleteModal.value = false;
     roleIdToDelete.value = null;
+    assignedUsersCount.value = 0;
+};
+
+const deleteRole = async (roleId) => {
+    try {
+        const response = await axios.delete(`/roles/${roleId}`, {
+            headers: { 'Accept': 'application/json' },
+            withCredentials: true
+        });
+
+        if (response.status === 400) {
+            assignedUsersCount.value = response.data.assignedUsersCount;
+            openDeleteModal(roleId);
+        } else {
+            notifications.value.push({ type: 'success', message: 'Rol eliminado correctamente' });
+            await loadRoles();
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 400) {
+            assignedUsersCount.value = error.response.data.assignedUsersCount;
+            openDeleteModal(roleId);
+        } else {
+            console.error('Error deleting role:', error);
+            notifications.value.push({ type: 'error', message: 'Error al eliminar el rol' });
+        }
+    }
 };
 
 const confirmDeleteRole = async () => {
-    if (roleIdToDelete.value) {
-        try {
-            await axios.delete(`/roles/${roleIdToDelete.value}`, {
-                headers: { 'Accept': 'application/json' },
-                withCredentials: true
-            });
-            notifications.value.push({ type: 'success', message: 'Rol eliminado correctamente' });
-        } catch (error) {
-            console.error('Error eliminando rol:', error);
-            notifications.value.push({ type: 'error', message: 'Error al intentar eliminar el rol' });
-        }
+    try {
+        await axios.delete(`/roles/${roleIdToDelete.value}?force=true`, {
+            headers: { 'Accept': 'application/json' },
+            withCredentials: true
+        });
+
+        notifications.value.push({ type: 'success', message: 'Rol y relaciones eliminados correctamente' });
+        await loadRoles();
+    } catch (error) {
+        console.error('Error deleting role:', error);
+        notifications.value.push({ type: 'error', message: 'Error al eliminar el rol y sus relaciones' });
     }
-    await loadRoles();
+
     closeDeleteModal();
 };
 
@@ -554,7 +578,7 @@ const showSuccessMessage = (message) => {
                         <div class="p-6">
                             <!-- Mensaje de error de validación -->
                             <div v-if="roleError" class="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
-                                    {{ roleError }}
+                                {{ roleError }}
                             </div>
                             <div class="space-y-4">
                                 <div v-for="role in roles" :key="role.id" class="p-4 bg-gray-50 rounded-lg">
@@ -570,8 +594,7 @@ const showSuccessMessage = (message) => {
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span v-for="permission in role.permissions" :key="permission.id"
-                                            class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                        <span v-for="permission in role.permissions" :key="permission.id" class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                                             {{ permission.name }}
                                         </span>
                                     </div>
@@ -579,19 +602,39 @@ const showSuccessMessage = (message) => {
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Modal de confirmación de eliminación -->
-                    <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmación de Eliminación</h3>
-                            <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este rol?</p>
-                            <div class="flex justify-end space-x-4">
-                                <button @click="confirmDeleteRole"
-                                    class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200">
-                                    Sí, eliminar
+
+                <!-- Modal de confirmación de eliminación -->
+                <div v-if="showDeleteModal" class="fixed z-10 inset-0 overflow-y-auto">
+                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                        </div>
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="sm:flex sm:items-start">
+                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                        <svg class="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11V7a1 1 0 10-2 0v2a1 1 0 002 0zm0 4a1 1 0 10-2 0v2a1 1 0 002 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                            Confirmar eliminación
+                                        </h3>
+                                        <div class="mt-2">
+                                            <p class="text-sm text-gray-500">
+                                                El rol está asignado a {{ assignedUsersCount }} usuarios. ¿Desea continuar y eliminar el rol?
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button @click="confirmDeleteRole" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Eliminar
                                 </button>
-                                <button @click="closeDeleteModal"
-                                    class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-200">
+                                <button @click="closeDeleteModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
                                     Cancelar
                                 </button>
                             </div>
@@ -778,8 +821,6 @@ const showSuccessMessage = (message) => {
                 </div>
             </div>
         </div>
-
-
-        
+    </div>
     </AppLayout>
 </template>
