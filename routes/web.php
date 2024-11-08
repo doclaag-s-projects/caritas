@@ -5,12 +5,17 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ViewController;
+use App\Http\Controllers\UserController;
+
+use App\Http\Middleware\CheckAdminRole;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
@@ -64,4 +69,44 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/tags/{tag}', [TagController::class, 'update']);
     Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
     Route::put('/tags/{tag}/estado', [TagController::class, 'cambiarEstado']);
+});
+
+// Ruta para manejo usuario.
+Route::middleware(['auth', CheckAdminRole::class])->group(function () {
+    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::get('/users', function () {
+        return Inertia::render('Users/AllUsers');
+    })->name('all.users');
+    Route::get('/register', function () {
+        return Inertia::render('Auth/Register');
+    })->name('register');
+});
+
+// Rutas para roles
+Route::middleware(['auth'])->group(function () {
+    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+    Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+    Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+});
+
+// Rutas para permisos
+Route::middleware(['auth'])->group(function () {
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::get('/permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
+    Route::post('/permissions', [PermissionController::class, 'store'])->name('permissions.store');
+    Route::get('/permissions/{permission}', [PermissionController::class, 'show'])->name('permissions.show');
+    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
+    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+});
+
+// Ruta para vistas
+Route::middleware(['auth'])->group(function () {
+    Route::get('/views', [ViewController::class, 'Index'])->name('views.index');
+    Route::get('/usersend', [UserController::class, 'show']);
+    Route::put('/user/controller/{id}', [UserController::class, 'update']);
+    Route::post('/users/create', [UserController::class, 'store'])->name('users.store');
+    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 });

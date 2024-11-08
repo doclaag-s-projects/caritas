@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,11 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
-    use HasFactory;
-    use HasProfilePhoto;
-    use Notifiable;
-    use TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasProfilePhoto, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +23,9 @@ class User extends Authenticatable
         'email',
         'password',
         'gender',
+        'Crear',
+        'Eliminar',
+        'Editar',
     ];
 
     /**
@@ -63,7 +61,11 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function roles()
+
+    /**
+     * Relación con UsuarioRol
+     */
+    public function usuariosRoles()
     {
         return $this->hasMany(UsuarioRol::class, 'usuario_id');
     }

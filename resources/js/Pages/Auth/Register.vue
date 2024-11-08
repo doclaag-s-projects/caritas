@@ -18,6 +18,9 @@ const form = useForm({
     terms: false,
     roles: [],
     gender: "",
+    Crear: false,
+    Eliminar: false,
+    Editar: false,
 });
 const roles = ref([]);
 
@@ -140,6 +143,36 @@ const submit = () => {
                     </div>
                 </div>
                 <InputError class="mt-2" :message="form.errors.roles" />
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="Crear" value="Crear" />
+                <Checkbox
+                    id="Crear"
+                    v-model:checked="form.Crear"
+                    name="Crear"
+                />
+                <InputError class="mt-2" :message="form.errors.Crear" />
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="Eliminar" value="Eliminar" />
+                <Checkbox
+                    id="Eliminar"
+                    v-model:checked="form.Eliminar"
+                    name="Eliminar"
+                />
+                <InputError class="mt-2" :message="form.errors.Eliminar" />
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="Editar" value="Editar" />
+                <Checkbox
+                    id="Editar"
+                    v-model:checked="form.Editar"
+                    name="Editar"
+                />
+                <InputError class="mt-2" :message="form.errors.Editar" />
             </div>
 
             <div
