@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Banner from '@/Components/Banner.vue';
 import Dropdown from '@/Components/Dropdown.vue';
@@ -8,11 +9,34 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 
-defineProps( {
+const props = defineProps( {
     title: String,
 } );
 
+const page = usePage();
+const userAuth = computed( () => page.props.auth.user );
+const userAdmin = ref( false );
 const showingNavigationDropdown = ref( false );
+
+
+const loadData = async () => {
+    try {
+        const { data: users } = await axios.get( '/usersend', {
+            headers: { 'Accept': 'application/json' },
+            withCredentials: true
+        } );
+
+        const currentUser = users.find( user => user.email === userAuth.value.email );
+        if ( currentUser ) {
+            userAdmin.value = currentUser.usuarios_roles[ 0 ]?.role.nombre.toLowerCase() === 'admin';
+        }
+    } catch ( error ) {
+        console.error( 'Error loading user data:', error );
+    }
+};
+
+
+onMounted( loadData );
 
 const switchToTeam = ( team ) => {
     router.put( route( 'current-team.update' ), {
@@ -64,7 +88,8 @@ const logout = () => {
                                 </NavLink>
                             </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('all.users')" :active="route().current('all.users')">
+                                <NavLink v-if=" userAdmin === true " :href=" route( 'all.users' ) "
+                                    :active=" route().current( 'all.users' ) ">
                                     Usuarios
                                 </NavLink>
                             </div>
@@ -116,7 +141,7 @@ const logout = () => {
                                                     Switch Teams
                                                 </div>
 
-                                                <template v-for=" team in $page.props.auth.user.all_teams "
+                                                <template v-for="  team in $page.props.auth.user.all_teams  "
                                                     :key="team.id">
                                                     <form @submit.prevent="switchToTeam( team )">
                                                         <DropdownLink as="button">
@@ -235,7 +260,8 @@ const logout = () => {
                         <div class="flex items-center px-4">
                             <div v-if=" $page.props.jetstream.managesProfilePhotos " class="shrink-0 me-3">
                                 <img class="h-10 w-10 rounded-full object-cover"
-                                    :src=" $page.props.auth.user.profile_photo_url " :alt=" $page.props.auth.user.name ">
+                                    :src=" $page.props.auth.user.profile_photo_url "
+                                    :alt=" $page.props.auth.user.name ">
                             </div>
 
                             <div>
@@ -249,7 +275,8 @@ const logout = () => {
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href=" route( 'profile.show' ) " :active=" route().current( 'profile.show' ) ">
+                            <ResponsiveNavLink :href=" route( 'profile.show' ) "
+                                :active=" route().current( 'profile.show' ) ">
                                 Profile
                             </ResponsiveNavLink>
 
@@ -292,7 +319,7 @@ const logout = () => {
                                         Switch Teams
                                     </div>
 
-                                    <template v-for=" team in $page.props.auth.user.all_teams " :key="team.id">
+                                    <template v-for="  team in $page.props.auth.user.all_teams  " :key="team.id">
                                         <form @submit.prevent="switchToTeam( team )">
                                             <ResponsiveNavLink as="button">
                                                 <div class="flex items-center">

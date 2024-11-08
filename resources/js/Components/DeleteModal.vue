@@ -28,7 +28,7 @@
                                     </h3>
                                     <div class="mt-2">
                                         <p class="text-sm text-gray-500">
-                                            ¿Estás seguro de que quieres eliminar el archivo "{{ name }}"? Esta
+                                            ¿Estás seguro de que quieres eliminar: "{{ name }}"? Esta
                                             acción no se puede deshacer.
                                         </p>
                                     </div>
@@ -64,6 +64,10 @@ const props = defineProps({
     name: {
         type: String,
         required: true
+    },
+    option: {
+        type: String,
+        default: ''
     }
 });
 
@@ -80,12 +84,24 @@ const closeModal = () => {
 };
 
 const deleteFile = async () => {
+
+    console.log(props.id)
+    console.log(props.name)
+    console.log(props.option)
+
     try {
-        await axios.delete(`/files/${props.id}`);
+        let url = `/files/${props.id}`;
+        if (props.option === 'user') {
+            url = `/users/${props.id}`;
+        }
+        await axios.delete(url, {
+            headers: { 'Accept': 'application/json' },
+            withCredentials: true
+        });
         emit('delete');
         closeModal();
     } catch (error) {
-        console.error('Error al eliminar el archivo:', error);
+        console.error('Error al eliminar:', error);
     }
 };
 </script>

@@ -11,10 +11,11 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ViewController;
 use App\Http\Controllers\UserController;
 
+use App\Http\Middleware\CheckAdminRole;
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
@@ -70,11 +71,15 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/tags/{tag}/estado', [TagController::class, 'cambiarEstado']);
 });
 
-// Ruta para manejo usuario. 
-Route::middleware(['auth'])->group(function () {
+// Ruta para manejo usuario.
+Route::middleware(['auth', CheckAdminRole::class])->group(function () {
+    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
     Route::get('/users', function () {
         return Inertia::render('Users/AllUsers');
     })->name('all.users');
+    Route::get('/register', function () {
+        return Inertia::render('Auth/Register');
+    })->name('register');
 });
 
 // Rutas para roles
