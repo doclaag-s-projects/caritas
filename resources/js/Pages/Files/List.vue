@@ -22,9 +22,12 @@ const { props } = usePage();
 const user = props.auth.user;
 const showPermissionMessage = ref(false);
 
-
 const canEdit = computed(() => {
     return user.Editar === 1;
+});
+
+const canDelete = computed(() => {
+    return user.Eliminar === 1;
 });
 
 const fetchFiles = async (page = 1) => {
@@ -165,8 +168,10 @@ const handleDelete = () => {
                                         </template>
                                     </p>
                                     <div class="absolute top-2 right-2 flex space-x-2 items-center">
-                                        <EditModal :id="file.id" :name="file.name" @update="handleUpdate" />
-                                        <DeleteModal :id="file.id" :name="file.name" @delete="handleDelete" />
+                                        <EditModal :id="file.id" :name="file.name" @update="handleUpdate"
+                                            :disabled="!canEdit" />
+                                        <DeleteModal :id="file.id" :name="file.name" @delete="handleDelete"
+                                            :disabled="!canDelete" />
                                     </div>
                                     <button @click="fetchPreviewUrl(file.id)"
                                         class="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
