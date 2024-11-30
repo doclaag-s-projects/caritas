@@ -57,6 +57,8 @@ const showNotification = (message, type = 'success') => {
     }, 3000);
 };
 
+const etiquetas = ref([]); // Define etiquetas como una referencia reactiva
+
 onMounted(async () => {
     try {
         await loadCategories();
@@ -145,9 +147,9 @@ const loadCategories = async () => {
 const loadTags = async () => {
     try {
         const response = await axios.get('/tags', { withCredentials: true });
-        secundarias.value = response.data;
+        etiquetas.value = response.data.filter(tag => tag.estado === 1);
     } catch (err) {
-        error.value = err.response?.data?.message || 'Error desconocido al cargar las etiquetas';
+        showNotification('error', err.response?.data?.message || 'Error desconocido al cargar las etiquetas');
     }
 };
 
@@ -167,21 +169,13 @@ const clearEtiquetaForm = () => {
     selectedEtiqueta.value = null;
 };
 
-const etiquetas = computed(() => {
-    return secundarias.value.map(etiqueta => ({
-        id: etiqueta.id,
-        nombre_etiqueta: etiqueta.nombre_etiqueta,
-        color: 'green'
-    }));
-});
-
 const selectedTags = ref([]);
 const resetTags = ref(false);
 
 const updateSelectedTags = (newSelectedTags) => {
     selectedTags.value = newSelectedTags;
     if (newSelectedTags.length === 1) {
-        const selectedTag = secundarias.value.find(tag => tag.id === newSelectedTags[0]);
+        const selectedTag = etiquetas.value.find(tag => tag.id === newSelectedTags[0]);
         if (selectedTag) {
             nombreEtiqueta.value = selectedTag.nombre_etiqueta;
             descripcionEtiqueta.value = selectedTag.descripcion_etiqueta;
