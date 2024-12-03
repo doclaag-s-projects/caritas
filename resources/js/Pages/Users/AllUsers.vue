@@ -6,78 +6,78 @@ import ToastNotification from '@/Components/ToastNotification.vue';
 import EditModal from '@/Components/EditModal.vue';
 import DeleteModal from '@/Components/DeleteModal.vue';
 
-const notifications = ref( [] ); // Para mostrar notificaciones
-const views = ref( [] );
-const roles = ref( [] );
-const users = ref( [] );
-const notification = ref( '' ); // Para mostrar notificaciones
-const roleError = ref( null );
-const assignedUsersCount = ref( 0 );
+const notifications = ref([]); // Para mostrar notificaciones
+const views = ref([]);
+const roles = ref([]);
+const users = ref([]);
+const notification = ref(''); // Para mostrar notificaciones
+const roleError = ref(null);
+const assignedUsersCount = ref(0);
 
 // Obtener datos
 const loadRoles = async () => {
     try {
-        const response = await axios.get( '/roles', {
+        const response = await axios.get('/roles', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
         roles.value = response.data
-            .filter( role => role.estado !== 0 ) // Filtrar roles con estado 0
-            .map( role => ( {
+            .filter(role => role.estado !== 0) // Filtrar roles con estado 0
+            .map(role => ({
                 id: role.id,
                 name: role.nombre,
                 estado: role.estado,
-                views: [ 1, 2, 3, 4 ]
-            } ) );
+                views: [1, 2, 3, 4]
+            }));
 
         // Esto forzará la reactividad en la vista
-        roles.value = [ ...roles.value ];
-    } catch ( error ) {
-        console.error( 'Error fetching roles:', error );
+        roles.value = [...roles.value];
+    } catch (error) {
+        console.error('Error fetching roles:', error);
     }
 };
 
 const loadData = async () => {
     try {
         await loadRoles();
-        const userResponse = await axios.get( '/usersend', {
+        const userResponse = await axios.get('/usersend', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        const viewsResponse = await axios.get( '/views', {
+        const viewsResponse = await axios.get('/views', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        users.value = userResponse.data.map( user => ( {
+        users.value = userResponse.data.map(user => ({
             id: user.id,
             name: user.name,
             email: user.email,
             gender: user.gender,
-            roles: user.usuarios_roles.map( usuarioRol => ( {
+            roles: user.usuarios_roles.map(usuarioRol => ({
                 name: usuarioRol.role.nombre
-            } ) ),
+            })),
             permissions: [
                 { crear: 'CREAR', estado: user.Crear },
                 { editar: 'EDITAR', estado: user.Editar },
                 { eliminar: 'ELIMINAR', estado: user.Eliminar }
             ],
-        } ) );
+        }));
 
-        views.value = viewsResponse.data.map( view => ( {
+        views.value = viewsResponse.data.map(view => ({
             id: view.id,
             name: view.nombre,
             active: 'activo',
-        } ) );
+        }));
 
-    } catch ( error ) {
-        console.error( 'Error fetching data:', error );
+    } catch (error) {
+        console.error('Error fetching data:', error);
     }
 };
 
-onMounted( loadData );
+onMounted(loadData);
 
 let basicPermissions = [
     { id: 1, name: 'Crear', estado: 0 },
@@ -86,13 +86,13 @@ let basicPermissions = [
 ];
 
 // Table State
-const tableHeaders = [ 'Usuario', 'Email', 'Género', 'Rol', 'Acciones' ];
-const searchQuery = ref( '' );
-const currentPage = ref( 1 );
+const tableHeaders = ['Usuario', 'Email', 'Género', 'Rol', 'Acciones'];
+const searchQuery = ref('');
+const currentPage = ref(1);
 const itemsPerPage = 10;
 
 // Form State
-const userForm = ref( {
+const userForm = ref({
     name: '',
     email: '',
     password: '',
@@ -102,42 +102,42 @@ const userForm = ref( {
     Crear: false,
     Eliminar: false,
     Editar: false,
-} );
+});
 
-const roleForm = ref( {
+const roleForm = ref({
     id: null,
     name: '',
     views: [],
     estado: true // Asegúrate de incluir el estado en el formulario
-} );
+});
 
 // Modal State
-const showUserModal = ref( false );
-const showPermissionsModal = ref( false );
-const showEditRoleModal = ref( false );
-const isEditing = ref( false );
-const selectedPermissions = ref( [] );
-const currentUserId = ref( null );
+const showUserModal = ref(false);
+const showPermissionsModal = ref(false);
+const showEditRoleModal = ref(false);
+const isEditing = ref(false);
+const selectedPermissions = ref([]);
+const currentUserId = ref(null);
 
 // Validation State
-const passwordError = ref( '' );
-const passwordMatchError = ref( '' );
+const passwordError = ref('');
+const passwordMatchError = ref('');
 
 // Computed Properties
-const filteredUsers = computed( () => {
-    return users.value.filter( user =>
-        user.name.toLowerCase().includes( searchQuery.value.toLowerCase() ) ||
-        user.email.toLowerCase().includes( searchQuery.value.toLowerCase() )
+const filteredUsers = computed(() => {
+    return users.value.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
     );
-} );
+});
 
-const totalPages = computed( () => Math.ceil( filteredUsers.value.length / itemsPerPage ) );
-const startIndex = computed( () => ( currentPage.value - 1 ) * itemsPerPage );
-const endIndex = computed( () => startIndex.value + itemsPerPage );
-const paginatedUsers = computed( () => filteredUsers.value.slice( startIndex.value, endIndex.value ) );
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage));
+const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage);
+const endIndex = computed(() => startIndex.value + itemsPerPage);
+const paginatedUsers = computed(() => filteredUsers.value.slice(startIndex.value, endIndex.value));
 
-const isFormValid = computed( () => {
-    if ( isEditing.value ) {
+const isFormValid = computed(() => {
+    if (isEditing.value) {
         return (
             userForm.value.name &&
             userForm.value.email &&
@@ -157,10 +157,10 @@ const isFormValid = computed( () => {
         !passwordError.value &&
         !passwordMatchError.value
     );
-} );
+});
 
 const validatePassword = () => {
-    if ( userForm.value.password.length < 8 ) {
+    if (userForm.value.password.length < 8) {
         passwordError.value = 'La contraseña debe tener al menos 8 caracteres';
         return false;
     }
@@ -169,7 +169,7 @@ const validatePassword = () => {
 };
 
 const validatePasswordMatch = () => {
-    if ( userForm.value.password !== userForm.value.confirmPassword ) {
+    if (userForm.value.password !== userForm.value.confirmPassword) {
         passwordMatchError.value = 'Las contraseñas no coinciden';
         return false;
     }
@@ -179,54 +179,50 @@ const validatePasswordMatch = () => {
 
 // Navigation Methods
 const nextPage = () => {
-    if ( currentPage.value < totalPages.value ) {
+    if (currentPage.value < totalPages.value) {
         currentPage.value++;
     }
 };
 
 const prevPage = () => {
-    if ( currentPage.value > 1 ) {
+    if (currentPage.value > 1) {
         currentPage.value--;
     }
 };
 
-const updatePermissionState = ( permission ) => {
-
+const updatePermissionState = (permission) => {
     permission.estado = permission.estado ? 1 : 0;
-    userForm.value.permissions[ permission.name ] = permission.estado;
-    switch ( permission.name.toLowerCase() ) {
+    switch (permission.name.toLowerCase()) {
         case 'crear':
-            userForm.value.Crear = permission.estado;
+            userForm.value.Crear = permission.estado === 1;
             break;
         case 'editar':
-            userForm.value.Editar = permission.estado;
+            userForm.value.Editar = permission.estado === 1;
             break;
         case 'eliminar':
-            userForm.value.Eliminar = permission.estado;
+            userForm.value.Eliminar = permission.estado === 1;
             break;
-
         default:
             break;
     }
 };
 
 // Modal Methods
-const openUserModal = ( user = null ) => {
+const openUserModal = (user = null) => {
+    if (user) {
+        basicPermissions = [
+            { id: 1, name: 'Crear', estado: user.permissions.find(p => p.crear === 'CREAR').estado === 1 },
+            { id: 2, name: 'Editar', estado: user.permissions.find(p => p.editar === 'EDITAR').estado === 1 },
+            { id: 3, name: 'Eliminar', estado: user.permissions.find(p => p.eliminar === 'ELIMINAR').estado === 1 }
+        ];
 
-    basicPermissions = [
-        { id: 1, name: 'Crear', estado: user?.permissions[ 0 ].estado },
-        { id: 2, name: 'Editar', estado: user?.permissions[ 1 ].estado },
-        { id: 3, name: 'Eliminar', estado: user?.permissions[ 2 ].estado }
-    ];
-
-    isEditing.value = !!user;
-    if ( user ) {
+        isEditing.value = !!user;
         userForm.value = {
             ...user,
-            roleId: roles.value.find( r => r.name === user.roles[ 0 ].name )?.id || '',
-            Crear: user.permissions.find( p => p.name === 'Crear' )?.estado === 1,
-            Editar: user.permissions.find( p => p.name === 'Editar' )?.estado === 1,
-            Eliminar: user.permissions.find( p => p.name === 'Eliminar' )?.estado === 1,
+            roleId: roles.value.find(r => r.name === user.roles[0].name)?.id || '',
+            Crear: user.permissions.find(p => p.crear === 'CREAR').estado === 1,
+            Editar: user.permissions.find(p => p.editar === 'EDITAR').estado === 1,
+            Eliminar: user.permissions.find(p => p.eliminar === 'ELIMINAR').estado === 1,
         };
 
 
@@ -261,10 +257,10 @@ const closeUserModal = () => {
     };
 };
 
-const openPermissionsModal = ( userId ) => {
+const openPermissionsModal = (userId) => {
     currentUserId.value = userId;
-    const user = users.value.find( u => u.id === userId );
-    selectedPermissions.value = [ ...user.permissions ];
+    const user = users.value.find(u => u.id === userId);
+    selectedPermissions.value = [...user.permissions];
     showPermissionsModal.value = true;
 };
 
@@ -274,11 +270,11 @@ const closePermissionsModal = () => {
     selectedPermissions.value = [];
 };
 
-const openEditRoleModal = ( role ) => {
+const openEditRoleModal = (role) => {
     roleForm.value = {
         id: role.id,
         name: role.name,
-        views: [ ...role.views ],
+        views: [...role.views],
         estado: role.estado // Asegúrate de incluir el estado en el formulario
     };
     showEditRoleModal.value = true;
@@ -295,9 +291,9 @@ const closeEditRoleModal = () => {
 };
 
 const savePermissions = () => {
-    const userIndex = users.value.findIndex( u => u.id === currentUserId.value );
-    if ( userIndex !== -1 ) {
-        users.value[ userIndex ].permissions = [ ...selectedPermissions.value ];
+    const userIndex = users.value.findIndex(u => u.id === currentUserId.value);
+    if (userIndex !== -1) {
+        users.value[userIndex].permissions = [...selectedPermissions.value];
     }
     closePermissionsModal();
 };
@@ -309,8 +305,8 @@ const saveRole = async () => {
     // Validar que el nombre no contenga espacios, números o símbolos
     const namePattern = /^[A-Za-zñÑáéíóúÁÉÍÓÚ]+( [A-Za-zñÑáéíóúÁÉÍÓÚ]+)*$/; // Permite letras, incluyendo ñ y tildes
 
-    if ( !namePattern.test( roleName ) ) {
-        notifications.value.push( { type: 'error', message: 'El nombre del rol solo debe contener letras.' } );
+    if (!namePattern.test(roleName)) {
+        notifications.value.push({ type: 'error', message: 'El nombre del rol solo debe contener letras.' });
         return; // Detiene la ejecución si la validación falla
     }
 
@@ -320,24 +316,24 @@ const saveRole = async () => {
     };
 
     try {
-        if ( roleForm.value.id ) {
+        if (roleForm.value.id) {
             // Actualizar rol existente
-            await axios.put( `/roles/${ roleForm.value.id }`, roleData, {
+            await axios.put(`/roles/${roleForm.value.id}`, roleData, {
                 headers: { 'Accept': 'application/json' },
                 withCredentials: true
-            } );
-            notifications.value.push( { type: 'success', message: 'Rol actualizado correctamente' } );
+            });
+            notifications.value.push({ type: 'success', message: 'Rol actualizado correctamente' });
         } else {
             // Crear nuevo rol
-            await axios.post( '/roles', roleData, {
+            await axios.post('/roles', roleData, {
                 headers: { 'Accept': 'application/json' },
                 withCredentials: true
-            } );
-            notifications.value.push( { type: 'success', message: 'Rol creado correctamente' } );
+            });
+            notifications.value.push({ type: 'success', message: 'Rol creado correctamente' });
         }
-    } catch ( error ) {
-        console.error( roleForm.value.id ? 'Error updating role:' : 'Error creating role:', error );
-        notifications.value.push( { type: 'error', message: roleForm.value.id ? 'Error al actualizar el rol' : 'Error al crear el rol' } );
+    } catch (error) {
+        console.error(roleForm.value.id ? 'Error updating role:' : 'Error creating role:', error);
+        notifications.value.push({ type: 'error', message: roleForm.value.id ? 'Error al actualizar el rol' : 'Error al crear el rol' });
     }
 
     await loadRoles();
@@ -345,7 +341,7 @@ const saveRole = async () => {
 };
 
 const saveUser = async () => {
-    if ( !isFormValid.value ) return;
+    if (!isFormValid.value) return;
 
     const userData = {
         name: userForm.value.name,
@@ -357,33 +353,39 @@ const saveUser = async () => {
         Eliminar: userForm.value.Eliminar ? '1' : '0',
     };
 
-    if ( !isEditing.value ) {
+    if (!isEditing.value) {
         userData.password = userForm.value.password;
         userData.password_confirmation = userForm.value.confirmPassword;
     }
 
     try {
         let response;
-        if ( isEditing.value ) {
-            response = await axios.put( `/user/controller/${ userForm.value.id }`, userData );
+        if (isEditing.value) {
+            response = await axios.put(`/user/controller/${userForm.value.id}`, userData, {
+                headers: { 'Accept': 'application/json' },
+                withCredentials: true
+            });
         } else {
-            response = await axios.post( '/users/create', userData );
+            response = await axios.post('/users/create', userData, {
+                headers: { 'Accept': 'application/json' },
+                withCredentials: true
+            });
         }
 
-        notifications.value.push( { type: 'success', message: isEditing.value ? 'User updated successfully' : 'User created successfully' } );
+        notifications.value.push({ type: 'success', message: isEditing.value ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente' });
         closeUserModal();
         await loadData();
-    } catch ( error ) {
-        console.error( 'Error saving user:', error.response?.data );
-        notifications.value.push( { type: 'error', message: `Error ${ isEditing.value ? 'updating' : 'creating' } user` } );
+    } catch (error) {
+        console.error('Error saving user:', error.response?.data);
+        notifications.value.push({ type: 'error', message: `Error ${isEditing.value ? 'actualizando' : 'creando'} usuario` });
     }
 };
 
-const showDeleteModal = ref( false );
-const roleIdToDelete = ref( null );
+const showDeleteModal = ref(false);
+const roleIdToDelete = ref(null);
 
 
-const openDeleteModal = ( roleId ) => {
+const openDeleteModal = (roleId) => {
     roleIdToDelete.value = roleId;
     showDeleteModal.value = true;
 };
@@ -394,81 +396,81 @@ const closeDeleteModal = () => {
     assignedUsersCount.value = 0;
 };
 
-const deleteRole = async ( roleId ) => {
+const deleteRole = async (roleId) => {
     try {
-        const response = await axios.delete( `/roles/${ roleId }`, {
+        const response = await axios.delete(`/roles/${roleId}`, {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        if ( response.status === 400 ) {
+        if (response.status === 400) {
             assignedUsersCount.value = response.data.assignedUsersCount;
-            openDeleteModal( roleId );
+            openDeleteModal(roleId);
         } else {
-            notifications.value.push( { type: 'success', message: 'Rol eliminado correctamente' } );
+            notifications.value.push({ type: 'success', message: 'Rol eliminado correctamente' });
             await loadRoles();
         }
-    } catch ( error ) {
-        if ( error.response && error.response.status === 400 ) {
+    } catch (error) {
+        if (error.response && error.response.status === 400) {
             assignedUsersCount.value = error.response.data.assignedUsersCount;
-            openDeleteModal( roleId );
+            openDeleteModal(roleId);
         } else {
-            console.error( 'Error deleting role:', error );
-            notifications.value.push( { type: 'error', message: 'Error al eliminar el rol' } );
+            console.error('Error deleting role:', error);
+            notifications.value.push({ type: 'error', message: 'Error al eliminar el rol' });
         }
     }
 };
 
 const confirmDeleteRole = async () => {
     try {
-        await axios.delete( `/roles/${ roleIdToDelete.value }?force=true`, {
+        await axios.delete(`/roles/${roleIdToDelete.value}?force=true`, {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        notifications.value.push( { type: 'success', message: 'Rol y relaciones eliminados correctamente' } );
+        notifications.value.push({ type: 'success', message: 'Rol y relaciones eliminados correctamente' });
         await loadRoles();
-    } catch ( error ) {
-        console.error( 'Error deleting role:', error );
-        notifications.value.push( { type: 'error', message: 'Error al eliminar el rol y sus relaciones' } );
+    } catch (error) {
+        console.error('Error deleting role:', error);
+        notifications.value.push({ type: 'error', message: 'Error al eliminar el rol y sus relaciones' });
     }
 
     closeDeleteModal();
 };
 
 
-const editRole = ( role ) => {
-    openEditRoleModal( role );
+const editRole = (role) => {
+    openEditRoleModal(role);
 };
 
-const handleUpdate = ( user ) => {
-    openUserModal( user );
+const handleUpdate = (user) => {
+    openUserModal(user);
 };
 
 
 const handleDelete = async () => {
 
     try {
-        const userResponse = await axios.get( '/usersend', {
+        const userResponse = await axios.get('/usersend', {
             headers: { 'Accept': 'application/json' },
             withCredentials: true
-        } );
+        });
 
-        users.value = userResponse.data.map( user => ( {
+        users.value = userResponse.data.map(user => ({
             id: user.id,
             name: user.name,
             email: user.email,
             gender: user.gender,
-            roles: user.usuarios_roles.map( usuarioRol => ( {
+            roles: user.usuarios_roles.map(usuarioRol => ({
                 name: usuarioRol.role.nombre
-            } ) ),
+            })),
             permissions: [
                 { crear: 'CREAR', estado: user.Crear },
                 { editar: 'EDITAR', estado: user.Editar },
                 { eliminar: 'ELIMINAR', estado: user.Eliminar }
             ],
-        } ) );
-    } catch ( err ) {
+        }));
+    } catch (err) {
         error.value = err.message || 'Error desconocido al cargar los archivos';
     }
 
@@ -485,19 +487,19 @@ const openCreateRoleModal = () => {
 };
 
 // Notificación de éxito
-const showSuccessMessage = ( message ) => {
+const showSuccessMessage = (message) => {
     notification.value = message;
-    setTimeout( () => {
+    setTimeout(() => {
         notification.value = '';
-    }, 3000 );
+    }, 3000);
 };
 </script>
 
 <template>
     <AppLayout title="Usuarios">
         <div class="notification-container">
-            <ToastNotification v-for="(notification, index) in notifications" :key="index"
-                :type="notification.type" :message="notification.message" />
+            <ToastNotification v-for="(notification, index) in notifications" :key="index" :type="notification.type"
+                :message="notification.message" />
         </div>
 
 
@@ -531,8 +533,7 @@ const showSuccessMessage = ( message ) => {
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="user in paginatedUsers" :key="user.id"
-                                    class="hover:bg-gray-50">
+                                <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
@@ -597,8 +598,7 @@ const showSuccessMessage = ( message ) => {
                         </div>
                         <div>
                             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                <button v-for="page in totalPages" :key="page"
-                                    @click="currentPage = page"
+                                <button v-for="page in totalPages" :key="page" @click="currentPage = page"
                                     class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium"
                                     :class="[
                                         currentPage === page
@@ -631,8 +631,7 @@ const showSuccessMessage = ( message ) => {
                                 {{ roleError }}
                             </div>
                             <div class="space-y-4">
-                                <div v-for="role in roles" :key="role.id"
-                                    class="p-4 bg-gray-50 rounded-lg">
+                                <div v-for="role in roles" :key="role.id" class="p-4 bg-gray-50 rounded-lg">
                                     <div class="flex justify-between items-center mb-2">
                                         <h3 class="text-lg font-medium text-gray-900">{{ role.name }}</h3>
                                         <div>
@@ -647,8 +646,7 @@ const showSuccessMessage = ( message ) => {
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span v-for="permission in role.permissions"
-                                            :key="permission.id"
+                                        <span v-for="permission in role.permissions" :key="permission.id"
                                             class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                                             {{ permission.name }}
                                         </span>
@@ -767,7 +765,8 @@ const showSuccessMessage = ( message ) => {
                                                 <input id="password" v-model="userForm.password" type="password"
                                                     required @input="validatePassword"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                                                <p v-if="passwordError" class="mt-1 text-xs text-red-600">{{ passwordError }}</p>
+                                                <p v-if="passwordError" class="mt-1 text-xs text-red-600">{{
+                                                    passwordError }}</p>
                                             </div>
 
                                             <div>
@@ -819,7 +818,8 @@ const showSuccessMessage = ( message ) => {
                                                 <label :for="'permission-' + permission.id"
                                                     class="text-sm font-medium text-gray-700">
                                                     {{ permission.name }} -
-                                                    <span :class="permission.estado ? 'text-green-500' : 'text-red-500'">
+                                                    <span
+                                                        :class="permission.estado ? 'text-green-500' : 'text-red-500'">
                                                         {{ permission.estado ? 'Activo' : 'Desactivado' }}
                                                     </span>
                                                 </label>
