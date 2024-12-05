@@ -224,8 +224,6 @@ const openUserModal = (user = null) => {
             Editar: user.permissions.find(p => p.editar === 'EDITAR').estado === 1,
             Eliminar: user.permissions.find(p => p.eliminar === 'ELIMINAR').estado === 1,
         };
-
-
     } else {
         userForm.value = {
             id: null,
@@ -743,11 +741,11 @@ const showSuccessMessage = (message) => {
 
                                 <form @submit.prevent="saveUser" class="space-y-4">
                                     <div class="grid grid-cols-2 gap-4">
-
                                         <div>
                                             <label for="name"
                                                 class="block text-sm font-medium text-gray-700">Nombre</label>
                                             <input id="name" v-model="userForm.name" type="text" required
+                                                autocomplete="off"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                         </div>
 
@@ -755,6 +753,7 @@ const showSuccessMessage = (message) => {
                                             <label for="email"
                                                 class="block text-sm font-medium text-gray-700">Email</label>
                                             <input id="email" v-model="userForm.email" type="email" required
+                                                autocomplete="off"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                         </div>
 
@@ -763,7 +762,7 @@ const showSuccessMessage = (message) => {
                                                 <label for="password"
                                                     class="block text-sm font-medium text-gray-700">Contraseña</label>
                                                 <input id="password" v-model="userForm.password" type="password"
-                                                    required @input="validatePassword"
+                                                    required @input="validatePassword" autocomplete="new-password"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                                 <p v-if="passwordError" class="mt-1 text-xs text-red-600">{{
                                                     passwordError }}</p>
@@ -775,6 +774,7 @@ const showSuccessMessage = (message) => {
                                                     Contraseña</label>
                                                 <input id="confirmPassword" v-model="userForm.confirmPassword"
                                                     type="password" required @input="validatePasswordMatch"
+                                                    autocomplete="off"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                                 <p v-if="passwordMatchError" class="mt-1 text-xs text-red-600">{{
                                                     passwordMatchError }}</p>
@@ -784,7 +784,7 @@ const showSuccessMessage = (message) => {
                                         <div>
                                             <label for="gender"
                                                 class="block text-sm font-medium text-gray-700">Género</label>
-                                            <select id="gender" v-model="userForm.gender" required
+                                            <select id="gender" v-model="userForm.gender" required autocomplete="off"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                                 <option value="">Seleccionar género</option>
                                                 <option value="Masculino">Masculino</option>
@@ -795,7 +795,7 @@ const showSuccessMessage = (message) => {
                                         <div>
                                             <label for="role"
                                                 class="block text-sm font-medium text-gray-700">Rol</label>
-                                            <select id="role" v-model="userForm.roleId" required
+                                            <select id="role" v-model="userForm.roleId" required autocomplete="off"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                                 <option value="">Seleccionar rol</option>
                                                 <option v-for="role in roles" :key="role.id" :value="role.id">
@@ -814,7 +814,8 @@ const showSuccessMessage = (message) => {
                                                 <input type="checkbox" :id="'permission-' + permission.id"
                                                     v-model="permission.estado"
                                                     @change="updatePermissionState(permission)"
-                                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+                                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    autocomplete="off" />
                                                 <label :for="'permission-' + permission.id"
                                                     class="text-sm font-medium text-gray-700">
                                                     {{ permission.name }} -
